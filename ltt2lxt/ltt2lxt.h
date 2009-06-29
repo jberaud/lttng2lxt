@@ -133,7 +133,6 @@ extern struct lt_trace *lt;
 extern int verbose;
 extern int atag_enabled;
 extern char *irq_tag[MAX_IRQS];
-extern struct ltt_trace *current_process;
 
 void atag_init(const char *name);
 char *atag_get(uint32_t addr);

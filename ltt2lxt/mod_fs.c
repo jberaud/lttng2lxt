@@ -16,16 +16,18 @@ static void fs_exec_process(struct ltt_module *mod,
         return;
     }
 
+	/*
     if (pass == 1) {
-        find_or_add_task_trace(s, res->pid);
+        find_or_add_task_trace(s, res->pid, pass);
     }
 
     if ((pass == 2) && (current_process)) {
         if (current_process) {
             emit_trace(current_process,(union ltt_value)LT_IDLE);
         }
-        current_process = find_or_add_task_trace(s, res->pid);
+        current_process = find_or_add_task_trace(s, res->pid, pass);
         emit_trace(current_process, (union ltt_value)LT_S0);
     }
+	*/
 }
 MODULE(fs, exec);

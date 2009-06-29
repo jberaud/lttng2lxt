@@ -6,172 +6,379 @@
 
 #include "ltt2lxt.h"
 
-struct ltt_trace *current_process = NULL;
+#define PROCESS_IDLE LT_IDLE
+#define PROCESS_USER LT_S0
+#define PROCESS_KERNEL LT_S1
+#define PROCESS_WAKEUP LT_S2
+
+#define SOFTIRQ_IDLE LT_IDLE
+#define SOFTIRQ_RUNNING LT_S0
+#define SOFTIRQ_RAISING LT_S2
+
+#define IRQ_IDLE LT_IDLE
+#define IRQ_RUNNING LT_S0
+#define IRQ_PREEMPT LT_S2
 
 /* nested irq stack */
 static int irqtab[MAX_IRQS];
 static int irqlevel = 0;
 
-static struct ltt_trace irq_pc = {.sym = NULL};
-static struct ltt_trace sirq[2] = {{.sym = NULL}, {.sym = NULL}};
-static struct ltt_trace tlow[2] = {{.sym = NULL}, {.sym = NULL}};
-static struct ltt_trace trace[MAX_IRQS] = {[0 ... (MAX_IRQS-1)]= {.sym = NULL}};
+/* nested softirq state */
+enum {
+    SOFTIRQS_IDLE,
+    SOFTIRQS_RAISE,
+    SOFTIRQS_RUN,
+};
+static int softirqstate;
+
+/* sofirq val */
+enum
+{
+    HI_SOFTIRQ=0,
+    TIMER_SOFTIRQ,
+    NET_TX_SOFTIRQ,
+    NET_RX_SOFTIRQ,
+    BLOCK_SOFTIRQ,
+    TASKLET_SOFTIRQ,
+    SCHED_SOFTIRQ,
+//#ifdef CONFIG_HIGH_RES_TIMERS
+    HRTIMER_SOFTIRQ,
+//#endif
+    RCU_SOFTIRQ,    /* Preferable RCU should always be the last softirq */
+};
+
+#define str(x) [x] = #x
+static char *sofirq_tag [] = {
+    str(HI_SOFTIRQ),
+    str(TIMER_SOFTIRQ),
+    str(NET_TX_SOFTIRQ),
+    str(NET_RX_SOFTIRQ),
+    str(BLOCK_SOFTIRQ),
+    str(TASKLET_SOFTIRQ),
+    str(SCHED_SOFTIRQ),
+    str(HRTIMER_SOFTIRQ),
+    str(RCU_SOFTIRQ),
+};
+#undef str
+
+static struct ltt_trace irq_pc;
+static struct ltt_trace sirq[3];
+static struct ltt_trace tlow[2];
+static struct ltt_trace trace[MAX_IRQS];
+static struct ltt_trace syscall_pc;
+static struct ltt_trace sched_event;
+static struct ltt_trace mode;
 
 static void init_traces(void)
 {
     init_trace(&irq_pc, TG_IRQ, 0.0, LT_SYM_F_ADDR, "IRQ (pc)");
     init_trace(&sirq[0], TG_IRQ, 100.0, LT_SYM_F_BITS, "softirq");
     init_trace(&sirq[1], TG_IRQ, 100.01, LT_SYM_F_STRING, "softirq (info)");
+    init_trace(&sirq[2], TG_IRQ, 100.02, LT_SYM_F_STRING, "softirq (info2)");
     init_trace(&tlow[0], TG_IRQ, 101.0, LT_SYM_F_BITS, "tasklet_low");
     init_trace(&tlow[1], TG_IRQ, 101.01, LT_SYM_F_ADDR, "tasklet_low (info)");
+    init_trace(&syscall_pc, TG_PROCESS, 0.0, LT_SYM_F_ADDR, "SYSCALL (pc)");
+    init_trace(&sched_event, TG_PROCESS, 0.0, LT_SYM_F_STRING, "Sched event");
+    init_trace(&mode, TG_PROCESS, 0.0, LT_SYM_F_STRING, "MODE");
+}
+
+static void kernel_common(struct parse_result *res, int pass)
+{
+    static char old_mode [15];
+
+    if (pass == 1) {
+        find_or_add_task_trace(res->pname, res->pid);
+    }
+    if (pass == 2) {
+        if (strcmp(old_mode, res->mode))
+            emit_trace(&mode, (union ltt_value)res->mode);
+        memcpy(old_mode, res->mode, sizeof(old_mode));
+        old_mode[sizeof(old_mode)-1] = 0;
+    }
 }
 
 static void kernel_irq_entry_process(struct ltt_module *mod,
-									 struct parse_result *res, int pass)
+                                     struct parse_result *res, int pass)
 {
-	int kernel_mode;
+    int kernel_mode;
     unsigned int ip, irq;
 
-	if (sscanf(res->values, " ip = %u, irq_id = %u, kernel_mode = %d",
-			   &ip, &irq, &kernel_mode) != 3) {
-		PARSE_ERROR(mod, res->values);
-		return;
-	}
+    kernel_common(res, pass);
+    if (sscanf(res->values, " ip = %u, irq_id = %u, kernel_mode = %d",
+               &ip, &irq, &kernel_mode) != 3) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
     if (irq >= MAX_IRQS) {
         DIAG("invalid IRQ vector ? (%d)\n", irq);
         return;
     }
 
-	if (pass == 1) {
+    if (pass == 1) {
         atag_store(ip);
-	}
-	if (pass == 2) {
+    }
+    if (pass == 2) {
         init_traces();
         init_trace(&trace[irq], TG_IRQ, 1.0+irq, LT_SYM_F_BITS, irq_tag[irq]);
         if (irqlevel >= MAX_IRQS) {
             DIAG("IRQ nesting level is too high (%d)\n", irqlevel);
             return;
         }
-        emit_trace(&trace[irq], (union ltt_value)LT_S0);
+        if (irqlevel > 0) {
+            emit_trace(&trace[irqtab[irqlevel-1]], (union ltt_value)IRQ_PREEMPT);
+        }
+        emit_trace(&trace[irq], (union ltt_value)IRQ_RUNNING);
         emit_trace(&irq_pc, (union ltt_value)ip);
-		irqtab[irqlevel++] = irq;
-	}
+        irqtab[irqlevel++] = irq;
+    }
 }
 MODULE(kernel, irq_entry);
 
 static void kernel_irq_exit_process(struct ltt_module *mod,
-									struct parse_result *res, int pass)
+                                    struct parse_result *res, int pass)
 {
-	if ((pass == 2) && (irqlevel > 0)) {
-		emit_trace(&trace[irqtab[--irqlevel]], (union ltt_value)LT_IDLE);
-	}
+    kernel_common(res, pass);
+    if ((pass == 2) && (irqlevel > 0)) {
+        emit_trace(&trace[irqtab[--irqlevel]], (union ltt_value)IRQ_IDLE);
+        if (irqlevel > 0) {
+            emit_trace(&trace[irqtab[irqlevel-1]], (union ltt_value)IRQ_RUNNING);
+        }
+    }
 }
 MODULE(kernel, irq_exit);
 
 static void kernel_softirq_entry_process(struct ltt_module *mod,
-										 struct parse_result *res, int pass)
+                                         struct parse_result *res, int pass)
 {
-	int id;
+    int id;
+    char *s;
 
-	if (sscanf(res->values, " softirq_id = %d", &id) != 1) {
-		PARSE_ERROR(mod, res->values);
-		return;
-	}
+    kernel_common(res, pass);
+    if (sscanf(res->values, " softirq_id = %d [%m[^]]", &id, &s) != 2) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
     if (pass == 1) {
         init_traces();
+        return;
     }
-	if (pass == 2) {
-        emit_trace(&sirq[0], (union ltt_value)LT_S0);
-        emit_trace(&sirq[1], (union ltt_value)"softirq %d", id);
-	}
+    if (pass == 2) {
+        emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_RUNNING);
+        if (id < sizeof(sofirq_tag) && sofirq_tag[id])
+            emit_trace(&sirq[1], (union ltt_value)sofirq_tag[id]);
+        else
+            emit_trace(&sirq[1], (union ltt_value)"softirq %d", id);
+        emit_trace(&sirq[2], (union ltt_value)s);
+        softirqstate = SOFTIRQS_RUN;
+    }
+    free(s);
 }
 MODULE(kernel, softirq_entry);
 
 static void kernel_softirq_exit_process(struct ltt_module *mod,
-										struct parse_result *res, int pass)
+                                        struct parse_result *res, int pass)
 {
+    kernel_common(res, pass);
     if (pass == 1) {
         init_traces();
     }
-	if (pass == 2) {
-		emit_trace(&sirq[0], (union ltt_value)LT_IDLE);
-	}
+    if (pass == 2) {
+        if (softirqstate == SOFTIRQS_RAISE)
+            emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_RAISING);
+        else
+            emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_IDLE);
+        softirqstate = SOFTIRQS_IDLE;
+    }
 }
 MODULE(kernel, softirq_exit);
 
 static void kernel_softirq_raise_process(struct ltt_module *mod,
-										 struct parse_result *res, int pass)
+                                         struct parse_result *res, int pass)
 {
-	int id;
+    int id;
 
+    kernel_common(res, pass);
     if (pass == 1) {
         init_traces();
     }
-	if (sscanf(res->values, " softirq_id = %d", &id) != 1) {
-		PARSE_ERROR(mod, res->values);
-		return;
-	}
-	if (pass == 2) {
-		emit_trace(&sirq[0], (union ltt_value)LT_S2);
-        emit_trace(&sirq[1], (union ltt_value)"raise %d", id);
-	}
+    if (sscanf(res->values, " softirq_id = %d", &id) != 1) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+    if (pass == 2) {
+        if (softirqstate == SOFTIRQS_IDLE)
+            emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_RAISING);
+        if (id < sizeof(sofirq_tag) && sofirq_tag[id])
+            emit_trace(&sirq[1], (union ltt_value)"! %s", sofirq_tag[id]);
+        else
+            emit_trace(&sirq[1], (union ltt_value)"raise %d", id);
+        softirqstate = SOFTIRQS_RAISE;
+    }
 }
 MODULE(kernel, softirq_raise);
 
 static void kernel_tasklet_low_entry_process(struct ltt_module *mod,
-											 struct parse_result *res, int pass)
+                                             struct parse_result *res, int pass)
 {
-	unsigned int data, func;
+    unsigned int data, func;
 
-	if (sscanf(res->values, " func = 0x%x, data = %u", &func, &data) != 2) {
-		PARSE_ERROR(mod, res->values);
-		return;
-	}
-	if (pass == 1) {
+    kernel_common(res, pass);
+    if (sscanf(res->values, " func = 0x%x, data = %u", &func, &data) != 2) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+    if (pass == 1) {
         init_traces();
         atag_store(func);
-	}
-	if (pass == 2) {
-		emit_trace(&tlow[0], (union ltt_value)LT_S0);
+    }
+    if (pass == 2) {
+        emit_trace(&tlow[0], (union ltt_value)LT_S0);
         emit_trace(&tlow[1], (union ltt_value)func);
-	}
+    }
 }
 MODULE(kernel, tasklet_low_entry);
 
 static void kernel_tasklet_low_exit_process(struct ltt_module *mod,
-											struct parse_result *res, int pass)
+                                            struct parse_result *res, int pass)
 {
-	if (pass == 1) {
+    kernel_common(res, pass);
+    if (pass == 1) {
         init_traces();
     }
-	if (pass == 2) {
-		emit_trace(&tlow[0], (union ltt_value)LT_IDLE);
-	}
+    if (pass == 2) {
+        emit_trace(&tlow[0], (union ltt_value)LT_IDLE);
+    }
 }
 MODULE(kernel, tasklet_low_exit);
 
 static void kernel_sched_schedule_process(struct ltt_module *mod,
                                           struct parse_result *res, int pass)
 {
-	unsigned int prev_pid, next_pid, prev_state;
+    unsigned int prev_pid, next_pid, prev_state;
 
-	if (sscanf(res->values, " prev_pid = %u, next_pid = %u, prev_state = %u",
+    kernel_common(res, pass);
+    if (sscanf(res->values, " prev_pid = %u, next_pid = %u, prev_state = %u",
                &prev_pid, &next_pid, &prev_state) != 3) {
-		PARSE_ERROR(mod, res->values);
-		return;
-	}
-    if (res->pname[0] == '\0') {
+        PARSE_ERROR(mod, res->values);
         return;
     }
-    if (pass == 1) {
-        find_or_add_task_trace(res->pname, next_pid);
+    if (pass == 2) {
+        struct ltt_trace *current_process;
+        current_process = find_task_trace(prev_pid);
+        emit_trace(current_process,(union ltt_value)PROCESS_IDLE);
+
+        current_process = find_task_trace(next_pid);
+        if (strcmp(res->mode, "USER_MODE") == 0)
+            emit_trace(current_process, (union ltt_value)PROCESS_USER);
+        else
+            emit_trace(current_process, (union ltt_value)PROCESS_KERNEL);
     }
-	if (pass == 2) {
-        if (current_process) {
-            emit_trace(current_process,(union ltt_value)LT_IDLE);
-        }
-        current_process = find_or_add_task_trace(res->pname, next_pid);
-        emit_trace(current_process, (union ltt_value)LT_S0);
-	}
 }
 MODULE(kernel, sched_schedule);
+
+static void kernel_sched_try_wakeup_process(struct ltt_module *mod,
+                                          struct parse_result *res, int pass)
+{
+    unsigned int pid, cpu_id, state;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " pid = %u, cpu_id = %u, state = %u",
+               &pid, &cpu_id, &state) != 3) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+    if (pass == 2) {
+        emit_trace(&sched_event, (union ltt_value)"%d try wakeup %d", res->pid, pid);
+        if (res->pid != pid) {
+            struct ltt_trace *current_process, *next_process;
+            current_process = find_task_trace(res->pid);
+            next_process = find_task_trace(pid);
+            emit_trace(current_process, (union ltt_value)PROCESS_WAKEUP);
+            emit_trace(next_process, (union ltt_value)PROCESS_WAKEUP);
+        }
+    }
+}
+MODULE(kernel, sched_try_wakeup);
+
+static void kernel_sched_wakeup_new_task_process(struct ltt_module *mod,
+                                          struct parse_result *res, int pass)
+{
+    unsigned int pid, cpu_id, state;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " pid = %u, state = %u, cpu_id = %u",
+               &pid, &state, &cpu_id) != 3) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+    if (pass == 2) {
+        emit_trace(&sched_event, (union ltt_value)"new task %d", pid);
+    }
+}
+MODULE(kernel, sched_wakeup_new_task);
+
+static void kernel_send_signal_process(struct ltt_module *mod,
+                                          struct parse_result *res, int pass)
+{
+    unsigned int pid, signal;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " pid = %u, signal = %u",
+               &pid, &signal) != 2) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+    if (pass == 2) {
+        emit_trace(&sched_event, (union ltt_value)"%d send signal %d to pid %d",
+                res->pid, signal, pid);
+    }
+}
+MODULE(kernel, send_signal);
+
+static void kernel_syscall_entry_process(struct ltt_module *mod,
+                                             struct parse_result *res, int pass)
+{
+    unsigned int ip, id;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " ip = 0x%x, syscall_id = %u",
+               &ip, &id) != 2) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+
+    if (pass == 1) {
+        atag_store(ip);
+    }
+    if (pass == 2) {
+        struct ltt_trace *current_process;
+        current_process = find_task_trace(res->pid);
+        emit_trace(current_process, (union ltt_value)PROCESS_KERNEL);
+        emit_trace(&current_process[1], (union ltt_value)"syscall %d", id);
+        emit_trace(&syscall_pc, (union ltt_value)ip);
+    }
+}
+MODULE(kernel, syscall_entry);
+
+static void kernel_syscall_exit_process(struct ltt_module *mod,
+                                             struct parse_result *res, int pass)
+{
+    int ret;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " ret = %d",
+               &ret) != 1) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+
+    if (pass == 2) {
+        struct ltt_trace *current_process;
+        current_process = find_task_trace(res->pid);
+        emit_trace(current_process, (union ltt_value)PROCESS_USER);
+        /* ret is not valid ... */
+        //emit_trace(&current_process[1], (union ltt_value)"%d", ret);
+    }
+}
+MODULE(kernel, syscall_exit);
+

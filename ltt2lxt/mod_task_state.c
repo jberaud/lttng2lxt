@@ -50,7 +50,7 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
             name = "????";
 
         //printf("insert pid %d\n", pid);
-        data = calloc(1, sizeof(struct ltt_trace));
+        data = calloc(2, sizeof(struct ltt_trace));
         assert(data);
 
         ret = malloc(sizeof(struct tdata));
@@ -60,7 +60,7 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
         ret = tsearch(ret, &root, compare);
         assert(ret);
         init_trace(&data[0], TG_PROCESS, 1.0 + pid, LT_SYM_F_BITS, "%s [%d]", name, pid);
-        //init_trace(&data[1], TG_PROCESS, 1.1 + pid, LT_SYM_F_STRING, "%s [%d] (info)", name, pid);
+        init_trace(&data[1], TG_PROCESS, 1.1 + pid, LT_SYM_F_STRING, "%s [%d] (info)", name, pid);
         ret = *((void**)ret);
     }
     else {
