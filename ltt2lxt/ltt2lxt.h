@@ -55,7 +55,7 @@
 #define LT_1                    "1"
 #define LT_0                    "0"
 
-#define MAX_IRQS                (32)
+#define MAX_IRQS                (64)
 
 enum trace_group {
     TG_IRQ,
@@ -145,11 +145,14 @@ void init_trace(struct ltt_trace *tr,
                 double pos,
                 uint32_t flags,
                 const char *fmt, ...);
+void refresh_name(struct ltt_trace *tr,
+                const char *fmt, ...);
 
 void emit_trace(struct ltt_trace *tr, union ltt_value value, ...);
 struct ltt_trace *trace_head(void);
 void emit_clock(double clock);
 struct ltt_trace * find_or_add_task_trace(const char *name, int pid);
+struct ltt_trace * find_task_trace(int pid);
 
 void parse_init(void);
 int parse_line(const char *line, struct parse_result *res);

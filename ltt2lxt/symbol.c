@@ -58,16 +58,36 @@ void init_trace(struct ltt_trace *tr,
     }
 }
 
+void refresh_name(struct ltt_trace *tr,
+                const char *fmt, ...)
+{
+    va_list ap;
+    struct lt_symbol *sym;
+    static char linebuf[LINEBUF_MAX];
+
+    assert(tr->sym);
+
+    va_start(ap, fmt);
+    vsnprintf(linebuf, LINEBUF_MAX, fmt, ap);
+    va_end(ap);
+
+    sym = lt_symbol_find(lt, linebuf);
+    if (!sym && tr->sym != sym) {
+        tr->sym = lt_symbol_add(lt, linebuf, 0, 0, 0, tr->flags);
+        assert(tr->sym);
+    }
+}
+
 void emit_trace(struct ltt_trace *tr, union ltt_value value, ...)
 {
-	char *s;
+    char *s;
     va_list ap;
     static char linebuf[LINEBUF_MAX];
 
     switch (tr->flags) {
 
     case LT_SYM_F_BITS:
-		lt_emit_value_bit_string(lt, tr->sym, 0, value.state);
+        lt_emit_value_bit_string(lt, tr->sym, 0, value.state);
         break;
 
     case LT_SYM_F_INTEGER:
@@ -75,12 +95,12 @@ void emit_trace(struct ltt_trace *tr, union ltt_value value, ...)
         break;
 
     case LT_SYM_F_STRING:
-		va_start(ap, value);
-		vsnprintf(linebuf, LINEBUF_MAX, value.format, ap);
-		va_end(ap);
-		s = strdup(linebuf);
-		assert(s);
-		lt_emit_value_string(lt, tr->sym, 0, s);
+        va_start(ap, value);
+        vsnprintf(linebuf, LINEBUF_MAX, value.format, ap);
+        va_end(ap);
+        s = strdup(linebuf);
+        assert(s);
+        lt_emit_value_string(lt, tr->sym, 0, s);
         break;
 
     case LT_SYM_F_ADDR:
@@ -93,7 +113,7 @@ void emit_trace(struct ltt_trace *tr, union ltt_value value, ...)
         break;
     default:
         assert(0);
-	}
+    }
 }
 
 struct ltt_trace *trace_head(void)
@@ -106,11 +126,11 @@ void emit_clock(double clock)
     lxttime_t timeval;
     static lxttime_t oldtimeval = 0;
 
-	// XXX hardcoded timescale
-	timeval = (lxttime_t)(1000000.0*clock);
+    // XXX hardcoded timescale
+    timeval = (lxttime_t)(1000000000.0*clock);
     if (timeval <= oldtimeval) {
         DIAG("negative time offset @%lld: %d !\n", oldtimeval,
-			 (int)((int64_t)timeval-(int64_t)oldtimeval));
+             (int)((int64_t)timeval-(int64_t)oldtimeval));
         timeval = oldtimeval + 1;
     }
 

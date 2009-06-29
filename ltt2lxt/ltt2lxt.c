@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
     assert(lt);
 
     // set time resolution
-    lt_set_timescale(lt, -6);
+    lt_set_timescale(lt, -9);
     lt_set_initial_value(lt, 'z');
 
     scan_lttdump(dumpfile);
