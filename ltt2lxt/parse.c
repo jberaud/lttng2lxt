@@ -50,6 +50,7 @@ int parse_line(const char *line, struct parse_result *res)
 	int i, ret;
 	const char *channel;
 	const char *name;
+	char *pname;
 	regmatch_t match[LINE_MATCHES];
 	static char *smatch[LINE_MATCHES] = {NULL, NULL, NULL, NULL, NULL};
 
@@ -71,12 +72,23 @@ int parse_line(const char *line, struct parse_result *res)
 	channel = smatch[1];
 	name = smatch[2];
 	res->clock = atof(smatch[3]);
-    res->pid = atoi(smatch[4]);
-    res->pname = smatch[6];
-    res->mode = smatch[9];
-    res->values = smatch[10];
+	res->pid = atoi(smatch[4]);
+	res->pname = smatch[6];
+	res->mode = smatch[9];
+	res->values = smatch[10];
 
 	res->module = find_module_by_name(channel, name);
 
-    return (res->module)? 0 : -1;
+	if (res->pname[0] == 0) {
+		res->pname = "no name";
+	}
+
+	/* replace . by _ */
+	pname = (char *)res->pname;
+	while ( (pname = strrchr(pname, '.')) ) {
+		*pname = '_';
+		pname++;
+	}
+
+	return (res->module)? 0 : -1;
 }
