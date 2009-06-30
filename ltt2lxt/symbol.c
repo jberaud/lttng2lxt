@@ -24,6 +24,7 @@
 
 static struct ltt_trace *head = NULL;
 
+static int symbol_flushed;
 void init_trace(struct ltt_trace *tr,
                 enum trace_group group,
                 double pos,
@@ -33,7 +34,8 @@ void init_trace(struct ltt_trace *tr,
     va_list ap;
     static char linebuf[LINEBUF_MAX];
 
-    if (tr->sym == NULL) {
+    assert(symbol_flushed == 0);
+    if (tr->name == NULL) {
 
         tr->flags = flags;
         tr->group = group;
@@ -41,19 +43,12 @@ void init_trace(struct ltt_trace *tr,
         tr->next = head;
         head = tr;
 
-        if (flags == LT_SYM_F_ADDR) {
-            flags = (atag_enabled)? LT_SYM_F_STRING : LT_SYM_F_INTEGER;
-        }
-
         va_start(ap, fmt);
         vsnprintf(linebuf, LINEBUF_MAX, fmt, ap);
         va_end(ap);
 
-        tr->sym = lt_symbol_find(lt, linebuf);
-        if (!tr->sym) {
-            tr->sym = lt_symbol_add(lt, linebuf, 0, 0, 0, flags);
-            assert(tr->sym);
-        }
+        tr->name = strdup(linebuf);
+
         INFO("adding trace '%s' group=%d pos=%g\n", linebuf, group, pos);
     }
 }
@@ -62,20 +57,35 @@ void refresh_name(struct ltt_trace *tr,
                 const char *fmt, ...)
 {
     va_list ap;
-    struct lt_symbol *sym;
     static char linebuf[LINEBUF_MAX];
 
-    assert(tr->sym);
+    assert(tr->name);
 
     va_start(ap, fmt);
     vsnprintf(linebuf, LINEBUF_MAX, fmt, ap);
     va_end(ap);
 
-    sym = lt_symbol_find(lt, linebuf);
-    if (!sym && tr->sym != sym) {
-        tr->sym = lt_symbol_add(lt, linebuf, 0, 0, 0, tr->flags);
-        assert(tr->sym);
+    free((char *)tr->name);
+    tr->name = strdup(linebuf);
+}
+
+void symbol_flush(void)
+{
+    struct ltt_trace *tr;
+
+    for (tr = trace_head(); tr; tr = tr->next) {
+        tr->sym = lt_symbol_find(lt, tr->name);
+        if (!tr->sym) {
+            uint32_t flags = tr->flags;
+            if (tr->flags == LT_SYM_F_ADDR) {
+                flags = (atag_enabled)? LT_SYM_F_STRING : LT_SYM_F_INTEGER;
+            }
+
+            tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 0, flags);
+            assert(tr->sym);
+        }
     }
+    symbol_flushed = 1;
 }
 
 void emit_trace(struct ltt_trace *tr, union ltt_value value, ...)
@@ -84,6 +94,7 @@ void emit_trace(struct ltt_trace *tr, union ltt_value value, ...)
     va_list ap;
     static char linebuf[LINEBUF_MAX];
 
+    assert(tr->sym);
     switch (tr->flags) {
 
     case LT_SYM_F_BITS:

@@ -7,9 +7,10 @@
 #include "ltt2lxt.h"
 
 #define PROCESS_IDLE LT_IDLE
-#define PROCESS_USER LT_S0
-#define PROCESS_KERNEL LT_S1
+#define PROCESS_KERNEL LT_S0
+#define PROCESS_USER LT_S1
 #define PROCESS_WAKEUP LT_S2
+#define PROCESS_DEAD LT_0
 
 #define SOFTIRQ_IDLE LT_IDLE
 #define SOFTIRQ_RUNNING LT_S0
@@ -115,11 +116,11 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
     }
 
     if (pass == 1) {
+        init_traces();
+        init_trace(&trace[irq], TG_IRQ, 1.0+irq, LT_SYM_F_BITS, irq_tag[irq]);
         atag_store(ip);
     }
     if (pass == 2) {
-        init_traces();
-        init_trace(&trace[irq], TG_IRQ, 1.0+irq, LT_SYM_F_BITS, irq_tag[irq]);
         if (irqlevel >= MAX_IRQS) {
             DIAG("IRQ nesting level is too high (%d)\n", irqlevel);
             return;
@@ -381,4 +382,24 @@ static void kernel_syscall_exit_process(struct ltt_module *mod,
     }
 }
 MODULE(kernel, syscall_exit);
+
+static void kernel_process_free_process(struct ltt_module *mod,
+                                             struct parse_result *res, int pass)
+{
+    int pid;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " pid = %d",
+               &pid) != 1) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+
+    if (pass == 2) {
+        struct ltt_trace *current_process;
+        current_process = find_task_trace(pid);
+        emit_trace(current_process, (union ltt_value)PROCESS_DEAD);
+    }
+}
+MODULE(kernel, process_free);
 

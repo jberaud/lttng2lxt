@@ -71,6 +71,7 @@ struct ltt_trace {
     uint32_t          flags;
     enum trace_group  group;
     double            pos;
+    const char       *name;
     struct ltt_trace *next;
 };
 
@@ -146,6 +147,7 @@ void init_trace(struct ltt_trace *tr,
                 const char *fmt, ...);
 void refresh_name(struct ltt_trace *tr,
                 const char *fmt, ...);
+void symbol_flush(void);
 
 void emit_trace(struct ltt_trace *tr, union ltt_value value, ...);
 struct ltt_trace *trace_head(void);

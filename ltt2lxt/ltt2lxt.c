@@ -57,6 +57,7 @@ static void scan_lttdump(const char *name)
 	/* flush address symbol conversion pipe */
 	atag_flush();
 
+    symbol_flush();
     INFO("pass 2: emitting LXT traces\n");
 
 	rewind(fp);

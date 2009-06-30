@@ -65,7 +65,8 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
     }
     else {
         ret = *((void**)ret);
-        refresh_name(&ret->data[0], "%s [%d]", name, pid);
+        refresh_name(&ret->data[0], "proc.%s [%d]", name, pid);
+        refresh_name(&ret->data[1], "proc.%s [%d] (info)", name, pid);
     }
     
     return ret->data;
