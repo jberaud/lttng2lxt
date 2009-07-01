@@ -25,7 +25,6 @@
 static struct ltt_module __modules_begin MODSECT(0);
 static struct ltt_module __modules_end   MODSECT(2);
 static struct ltt_module *modtab = &__modules_begin+1;
-static unsigned int modcnt;
 static struct hsearch_data table;
 
 static char *mk_module_key(const char *channel, const char *name)
@@ -44,6 +43,7 @@ static char *mk_module_key(const char *channel, const char *name)
 
 void modules_init(void)
 {
+	unsigned int modcnt;
 	int i, status;
 	ENTRY entry, *ret;
 
@@ -69,17 +69,14 @@ void modules_init(void)
 
 struct ltt_module *find_module_by_name(const char *channel, const char *name)
 {
-    int i;
 	ENTRY entry, *ret;
 
-    for (i = 0; i < modcnt; i++) {
+	entry.key = mk_module_key(channel, name);
+	(void)hsearch_r(entry, FIND, &ret, &table);
+	free(entry.key);
 
-		entry.key = mk_module_key(channel, name);
-		(void)hsearch_r(entry, FIND, &ret, &table);
-
-		if (ret) {
-			return ret->data;
-		}
-    }
+	if (ret) {
+		return ret->data;
+	}
     return NULL;
 }
