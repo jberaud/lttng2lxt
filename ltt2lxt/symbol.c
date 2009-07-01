@@ -65,8 +65,10 @@ void refresh_name(struct ltt_trace *tr,
     vsnprintf(linebuf, LINEBUF_MAX, fmt, ap);
     va_end(ap);
 
-    free((char *)tr->name);
-    tr->name = strdup(linebuf);
+    if (strcmp(tr->name, linebuf)) {
+        free((char *)tr->name);
+        tr->name = strdup(linebuf);
+    }
 }
 
 void symbol_flush(void)
@@ -80,8 +82,12 @@ void symbol_flush(void)
             if (tr->flags == LT_SYM_F_ADDR) {
                 flags = (atag_enabled)? LT_SYM_F_STRING : LT_SYM_F_INTEGER;
             }
-
-            tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 0, flags);
+            if (tr->flags == LT_SYM_F_U16) {
+                tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 15, 0);
+            }
+            else {
+            	tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 0, flags);
+			}
             assert(tr->sym);
         }
     }
@@ -90,17 +96,19 @@ void symbol_flush(void)
 
 void emit_trace(struct ltt_trace *tr, union ltt_value value, ...)
 {
-    char *s;
     va_list ap;
     static char linebuf[LINEBUF_MAX];
 
     assert(tr->sym);
+    tr->emitted = 1;
     switch (tr->flags) {
 
     case LT_SYM_F_BITS:
         lt_emit_value_bit_string(lt, tr->sym, 0, value.state);
         break;
 
+    case LT_SYM_F_U16:
+        assert(value.data <= 0xffff);
     case LT_SYM_F_INTEGER:
         lt_emit_value_int(lt, tr->sym, 0, value.data);
         break;
@@ -109,9 +117,7 @@ void emit_trace(struct ltt_trace *tr, union ltt_value value, ...)
         va_start(ap, value);
         vsnprintf(linebuf, LINEBUF_MAX, value.format, ap);
         va_end(ap);
-        s = strdup(linebuf);
-        assert(s);
-        lt_emit_value_string(lt, tr->sym, 0, s);
+        lt_emit_value_string(lt, tr->sym, 0, linebuf);
         break;
 
     case LT_SYM_F_ADDR:

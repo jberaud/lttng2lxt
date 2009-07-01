@@ -30,7 +30,7 @@ static void mm_handle_fault_entry_process(struct ltt_module *mod,
 		return;
 	}
 	if (pass == 2) {
-		emit_trace(&trace[0], (union ltt_value)LT_S0);
+		emit_trace(&trace[0], (union ltt_value)(wr?LT_S2:LT_S0));
 		emit_trace(&trace[1], (union ltt_value)"%c@0x%08x",
                    (wr)? 'W' : 'R', (uint32_t)address);
 	}

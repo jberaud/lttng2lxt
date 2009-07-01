@@ -66,6 +66,7 @@ static struct ltt_trace irq_pc;
 static struct ltt_trace sirq[3];
 static struct ltt_trace tlow[2];
 static struct ltt_trace trace[MAX_IRQS];
+static struct ltt_trace syscall_id;
 static struct ltt_trace syscall_pc;
 static struct ltt_trace sched_event;
 static struct ltt_trace mode;
@@ -78,6 +79,7 @@ static void init_traces(void)
     init_trace(&sirq[2], TG_IRQ, 100.02, LT_SYM_F_STRING, "softirq (info2)");
     init_trace(&tlow[0], TG_IRQ, 101.0, LT_SYM_F_BITS, "tasklet_low");
     init_trace(&tlow[1], TG_IRQ, 101.01, LT_SYM_F_ADDR, "tasklet_low (info)");
+    init_trace(&syscall_id, TG_PROCESS, 0.0, LT_SYM_F_U16, "SYSCALL");
     init_trace(&syscall_pc, TG_PROCESS, 0.0, LT_SYM_F_ADDR, "SYSCALL (pc)");
     init_trace(&sched_event, TG_PROCESS, 0.0, LT_SYM_F_STRING, "Sched event");
     init_trace(&mode, TG_PROCESS, 0.0, LT_SYM_F_STRING, "MODE");
@@ -356,6 +358,7 @@ static void kernel_syscall_entry_process(struct ltt_module *mod,
         current_process = find_task_trace(res->pid);
         emit_trace(current_process, (union ltt_value)PROCESS_KERNEL);
         emit_trace(&current_process[1], (union ltt_value)"syscall %d", id);
+        emit_trace(&syscall_id, (union ltt_value)id);
         emit_trace(&syscall_pc, (union ltt_value)ip);
     }
 }

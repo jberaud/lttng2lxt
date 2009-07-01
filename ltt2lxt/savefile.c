@@ -46,7 +46,7 @@ static void sort_traces(enum trace_group group, struct ltt_trace **tab,int *len)
 
     /* filter traces */
     for (trace = trace_head(), n = 0; trace; trace = trace->next) {
-        if (trace->group == group) {
+        if (trace->group == group && trace->emitted) {
             tab[n++] = trace;
         }
     }
@@ -73,7 +73,8 @@ static void print_group(enum trace_group group, const char *name, FILE *fp,
             flag |= (tab[i]->sym->flags & LT_SYM_F_INTEGER)? TR_HEX : 0;
             flag |= (tab[i]->sym->flags & LT_SYM_F_STRING)?  TR_ASCII : 0;
 
-            fprintf(fp, "@%x\n%s\n", flag|TR_RJUSTIFY, tab[i]->sym->name);
+            fprintf(fp, "@%x\n%s%s\n", flag|TR_RJUSTIFY, tab[i]->sym->name,
+                    (tab[i]->flags & LT_SYM_F_U16)? "[0:15]":"");
         }
     }
 }

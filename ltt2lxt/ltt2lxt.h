@@ -58,12 +58,14 @@
 #define MAX_IRQS                (64)
 
 enum trace_group {
+    TG_NONE,
     TG_IRQ,
     TG_MM,
     TG_PROCESS,
 };
 
 //! Additional pseudo-trace symbol type
+#define LT_SYM_F_U16          (1<<30)
 #define LT_SYM_F_ADDR          (1<<31)
 
 struct ltt_trace {
@@ -72,6 +74,7 @@ struct ltt_trace {
     enum trace_group  group;
     double            pos;
     const char       *name;
+    int               emitted;
     struct ltt_trace *next;
 };
 

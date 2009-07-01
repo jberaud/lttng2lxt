@@ -59,14 +59,14 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
         ret->data = data;
         ret = tsearch(ret, &root, compare);
         assert(ret);
-        init_trace(&data[0], TG_PROCESS, 1.0 + pid, LT_SYM_F_BITS, "%s [%d]", name, pid);
-        init_trace(&data[1], TG_PROCESS, 1.1 + pid, LT_SYM_F_STRING, "%s [%d] (info)", name, pid);
+        init_trace(&data[0], TG_PROCESS, 1.0 + pid, LT_SYM_F_BITS, "proc.state.%s [%d]", name, pid);
+        init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + pid, LT_SYM_F_STRING, "proc.sys.%s [%d] (info)", name, pid);
         ret = *((void**)ret);
     }
     else {
         ret = *((void**)ret);
-        refresh_name(&ret->data[0], "proc.%s [%d]", name, pid);
-        refresh_name(&ret->data[1], "proc.%s [%d] (info)", name, pid);
+        refresh_name(&ret->data[0], "proc.state.%s [%d]", name, pid);
+        refresh_name(&ret->data[1], "proc.sys.%s [%d] (info)", name, pid);
     }
     
     return ret->data;
@@ -85,10 +85,13 @@ static void task_state_process_state_process(struct ltt_module *mod,
         PARSE_ERROR(mod, res->values);
         return;
     }
+	if (pass == 1) {
+		find_or_add_task_trace(s, pid)/*[0].group = 0*/;
+	}
     if (pass == 2) {
         //XXX
-        //char *level = (status == 1)? LT_S0 : LT_IDLE;
-        //emit_trace(find_or_add_task_trace(s, pid), (union ltt_value)level);
+		if (status == 1) 
+        	emit_trace(find_task_trace(pid), (union ltt_value)LT_S0);
     }
 }
 MODULE(task_state, process_state);

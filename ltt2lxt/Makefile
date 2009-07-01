@@ -2,7 +2,7 @@
 
 CC 		= gcc
 CFLAGS	= -g -Wall -O2
-HEADERS = lxt_write.h
+HEADERS = lxt_write.h ltt2lxt.h
 LIBS	= -lz -lbz2
 PROGRAM	= ltt2lxt
 
