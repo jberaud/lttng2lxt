@@ -54,6 +54,9 @@ int parse_line(const char *line, struct parse_result *res)
 	regmatch_t match[LINE_MATCHES];
 	static char *smatch[LINE_MATCHES] = {NULL, NULL, NULL, NULL, NULL};
 
+	/* TODO this is very slow (take 75% of time), and should replaced by a more simple
+	   token parser
+	 */
 	ret = regexec(&line_preg, line, LINE_MATCHES, match, 0);
 
 	if ((ret == REG_NOMATCH) || (match[LINE_MATCHES-1].rm_so == -1)) {
