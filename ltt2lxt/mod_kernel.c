@@ -30,8 +30,6 @@ enum {
     SOFTIRQS_RAISE,
     SOFTIRQS_RUN,
 };
-static int softirqstate;
-
 /* sofirq val */
 enum
 {
@@ -61,6 +59,10 @@ static char *sofirq_tag [] = {
     str(RCU_SOFTIRQ),
 };
 #undef str
+static int softirqstate;
+static double softirqtime;
+static double timer3clock;
+static double timer3diff;
 
 static struct ltt_trace irq_pc;
 static struct ltt_trace sirq[3];
@@ -128,11 +130,27 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
             return;
         }
         if (irqlevel > 0) {
+            TDIAG(res, "nesting irq\n");
             emit_trace(&trace[irqtab[irqlevel-1]], (union ltt_value)IRQ_PREEMPT);
         }
         emit_trace(&trace[irq], (union ltt_value)IRQ_RUNNING);
         emit_trace(&irq_pc, (union ltt_value)ip);
         irqtab[irqlevel++] = irq;
+        if (irq == 19) {
+            if (timer3clock > 0) {
+                double diff = res->clock - timer3clock;
+                if (timer3diff > 0) {
+                    /* we allow a jitter of 0,1 ms */
+                    if (diff > timer3diff + 0.0001) {
+                        TDIAG(res, "late irq !!! system timer took %fs (instead of %fs)\n", diff, timer3diff);
+                    }
+                }
+                else
+                    timer3diff = diff;
+            }
+
+            timer3clock = res->clock;
+        }
     }
 }
 MODULE(kernel, irq_entry);
@@ -173,6 +191,7 @@ static void kernel_softirq_entry_process(struct ltt_module *mod,
             emit_trace(&sirq[1], (union ltt_value)"softirq %d", id);
         emit_trace(&sirq[2], (union ltt_value)s);
         softirqstate = SOFTIRQS_RUN;
+        softirqtime = res->clock;
     }
     free(s);
 }
@@ -191,6 +210,9 @@ static void kernel_softirq_exit_process(struct ltt_module *mod,
         else
             emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_IDLE);
         softirqstate = SOFTIRQS_IDLE;
+        /* we allow up to 0.5ms softirq */
+        if (res->clock - softirqtime > 0.0005)
+            TDIAG(res, "long softirq %fs!!!\n", res->clock - softirqtime);
     }
 }
 MODULE(kernel, softirq_exit);
@@ -271,9 +293,9 @@ static void kernel_sched_schedule_process(struct ltt_module *mod,
         emit_trace(current_process,(union ltt_value)PROCESS_IDLE);
 
         current_process = find_task_trace(next_pid);
-		/* XXX this is often buggy : some process are in SYCALL mode while running
-		   in userspace ...
-		 */
+        /* XXX this is often buggy : some process are in SYCALL mode while running
+           in userspace ...
+         */
         if (strcmp(res->mode, "USER_MODE") == 0)
             emit_trace(current_process, (union ltt_value)PROCESS_USER);
         else

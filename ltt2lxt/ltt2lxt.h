@@ -129,6 +129,12 @@ union ltt_value {
 		fprintf(stderr, PFX _fmt, ##args);      \
 	} while (0)
 
+#define TDIAG(res, _fmt, args...)               \
+	do {                                        \
+		fprintf(stderr, PFX "%s.%s @%fs :", res->module->channel, res->module->name, res->clock); \
+		fprintf(stderr, _fmt, ##args);          \
+	} while (0)
+
 #define PARSE_ERROR(_mod_,_val_)										\
 	DIAG("%s.%s: unable to parse values '%s'\n",						\
 		 (_mod_)->channel, (_mod_)->name, _val_)
