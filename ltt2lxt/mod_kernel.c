@@ -271,6 +271,9 @@ static void kernel_sched_schedule_process(struct ltt_module *mod,
         emit_trace(current_process,(union ltt_value)PROCESS_IDLE);
 
         current_process = find_task_trace(next_pid);
+		/* XXX this is often buggy : some process are in SYCALL mode while running
+		   in userspace ...
+		 */
         if (strcmp(res->mode, "USER_MODE") == 0)
             emit_trace(current_process, (union ltt_value)PROCESS_USER);
         else
