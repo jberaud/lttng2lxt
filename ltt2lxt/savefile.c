@@ -21,6 +21,7 @@
  */
 
 #include "ltt2lxt.h"
+#include "savefile.h"
 
 static unsigned int count_traces(void)
 {

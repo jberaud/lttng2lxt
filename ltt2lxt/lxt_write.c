@@ -1,10 +1,5 @@
-/**
- * @file  host/lxt_write.c
- */
-
-
 /*
- * Copyright (c) 2001-5 Tony Bybell.
+ * Copyright (c) 2001-9 Tony Bybell.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,9 +20,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+//#include <config.h>
 #include "lxt_write.h"
 
-/**
+/*
  * in-place sort to keep chained facs from migrating...
  */
 static void wave_mergesort(struct lt_symbol **a, struct lt_symbol **b, int lo, int hi)
@@ -191,7 +187,7 @@ static dslxt_Tree * dslxt_delete(char *i, dslxt_Tree * t) {
 
 /************************ splay ************************/
 
-/**
+/*
  * functions which emit various big endian
  * data to a file
  */ 
@@ -283,7 +279,7 @@ return(rc);
 }
 
 
-/**
+/*
  * gzfunctions which emit various big endian
  * data to a file.  (lt->position needs to be
  * fixed up on gzclose so the tables don't
@@ -382,7 +378,7 @@ do
 return(rc);
 }
 
-/**
+/*
  * bz2functions which emit various big endian
  * data to a file.  (lt->position needs to be
  * fixed up on BZ2_bzclose so the tables don't
@@ -482,7 +478,7 @@ return(rc);
 }
 
 
-/**
+/*
  * switch between compression modes above
  */
 static void lt_set_zmode(struct lt_trace *lt, int mode)
@@ -522,7 +518,7 @@ switch(mode)
 }
 
 
-/**
+/*
  * hash/symtable manipulation
  */
 static int lt_hash(const char *s)
@@ -583,7 +579,7 @@ return(NULL); /* not found, add here if you want to add*/
 }
 
 
-/**
+/*
  * compress facs to a prefix count + string + 0x00
  */
 static void lt_compress_fac(struct lt_trace *lt, char *str)
@@ -623,6 +619,11 @@ if(s->namlen<3) return;
 lastch--;
 while(lastch!=s->name)
 	{
+	if(*lastch=='.')
+		{
+		return;	/* MTI SV [0.3] notation for implicit vars */
+		}
+
 	if(*lastch=='[')
 		{
 		*lastch=0x00;	
@@ -739,7 +740,7 @@ if((lt)&&(lt->numfacs))
 }
 
 
-/** 
+/* 
  * initialize the trace and get back an lt context
  */
 struct lt_trace *lt_init(const char *name)
@@ -768,7 +769,7 @@ if(!(lt->handle=fopen(name, "wb")))
 return(lt);
 }
 
-/**
+/*
  * clock flushing..
  */
 static void lt_flushclock(struct lt_trace *lt, struct lt_symbol *s)
@@ -973,7 +974,7 @@ s->clk_numtrans = 0;
 }
 
 
-/**
+/*
  * recurse through dictionary
  */
 static void lt_recurse_dictionary(struct lt_trace *lt, dslxt_Tree *ds)
@@ -1047,7 +1048,7 @@ lt->dict = NULL;
 }
 
 
-/**
+/*
  * close out the trace and fixate it
  */
 void lt_close(struct lt_trace *lt)
@@ -1177,7 +1178,7 @@ if(lt)
 		lt_emit_u8(lt, lt->initial_value);
 		}
 
-	if((lt->timescale>-129)&(lt->timescale<128))
+	if((lt->timescale>-129)&&(lt->timescale<128))
 		{
 		lt->timescale_offset = lt->position;
 		lt_emit_u8(lt, lt->timescale);
@@ -1213,45 +1214,45 @@ if(lt)
 	lt_emit_u8(lt, LT_SECTION_END);
 
 	/* Version 1 */
-	if(lt->change_field_offset) { lt_emit_u32(lt, lt->change_field_offset); lt_emit_u8(lt, LT_SECTION_CHG); }
-	if(lt->sync_table_offset) { lt_emit_u32(lt, lt->sync_table_offset); lt_emit_u8(lt, LT_SECTION_SYNC_TABLE); }
-	if(lt->facname_offset) { lt_emit_u32(lt, lt->facname_offset); lt_emit_u8(lt, LT_SECTION_FACNAME); }
-	if(lt->facgeometry_offset) { lt_emit_u32(lt, lt->facgeometry_offset); lt_emit_u8(lt, LT_SECTION_FACNAME_GEOMETRY); }
-	if(lt->timescale_offset) { lt_emit_u32(lt, lt->timescale_offset); lt_emit_u8(lt, LT_SECTION_TIMESCALE); }
-	if(lt->time_table_offset) { lt_emit_u32(lt, lt->time_table_offset); lt_emit_u8(lt, is64 ? LT_SECTION_TIME_TABLE64 : LT_SECTION_TIME_TABLE); }
-	if(lt->initial_value_offset) { lt_emit_u32(lt, lt->initial_value_offset); lt_emit_u8(lt, LT_SECTION_INITIAL_VALUE); }
-	if(lt->double_test_offset) { lt_emit_u32(lt, lt->double_test_offset); lt_emit_u8(lt, LT_SECTION_DOUBLE_TEST); }
+	if(lt->change_field_offset) { lt_emit_u32(lt, lt->change_field_offset); lt_emit_u8(lt, LT_SECTION_CHG); lt->change_field_offset = 0; }
+	if(lt->sync_table_offset) { lt_emit_u32(lt, lt->sync_table_offset); lt_emit_u8(lt, LT_SECTION_SYNC_TABLE); lt->sync_table_offset = 0; }
+	if(lt->facname_offset) { lt_emit_u32(lt, lt->facname_offset); lt_emit_u8(lt, LT_SECTION_FACNAME); lt->facname_offset = 0; }
+	if(lt->facgeometry_offset) { lt_emit_u32(lt, lt->facgeometry_offset); lt_emit_u8(lt, LT_SECTION_FACNAME_GEOMETRY); lt->facgeometry_offset = 0; }
+	if(lt->timescale_offset) { lt_emit_u32(lt, lt->timescale_offset); lt_emit_u8(lt, LT_SECTION_TIMESCALE); lt->timescale_offset = 0; }
+	if(lt->time_table_offset) { lt_emit_u32(lt, lt->time_table_offset); lt_emit_u8(lt, is64 ? LT_SECTION_TIME_TABLE64 : LT_SECTION_TIME_TABLE); lt->time_table_offset = 0; }
+	if(lt->initial_value_offset) { lt_emit_u32(lt, lt->initial_value_offset); lt_emit_u8(lt, LT_SECTION_INITIAL_VALUE); lt->initial_value_offset = 0; }
+	if(lt->double_test_offset) { lt_emit_u32(lt, lt->double_test_offset); lt_emit_u8(lt, LT_SECTION_DOUBLE_TEST); lt->double_test_offset = 0; }
 
 	/* Version 2 adds */
-	if(lt->zfacname_predec_size) { lt_emit_u32(lt, lt->zfacname_predec_size); lt_emit_u8(lt, LT_SECTION_ZFACNAME_PREDEC_SIZE); }
-	if(lt->zfacname_size) { lt_emit_u32(lt, lt->zfacname_size); lt_emit_u8(lt, LT_SECTION_ZFACNAME_SIZE); }
-	if(lt->zfacgeometry_size) { lt_emit_u32(lt, lt->zfacgeometry_size); lt_emit_u8(lt, LT_SECTION_ZFACNAME_GEOMETRY_SIZE); }
-	if(lt->zsync_table_size) { lt_emit_u32(lt, lt->zsync_table_size); lt_emit_u8(lt, LT_SECTION_ZSYNC_SIZE); }
-	if(lt->ztime_table_size) { lt_emit_u32(lt, lt->ztime_table_size); lt_emit_u8(lt, LT_SECTION_ZTIME_TABLE_SIZE); }
-	if(lt->chg_table_size) { lt_emit_u32(lt, lt->chg_table_size); lt_emit_u8(lt, LT_SECTION_ZCHG_PREDEC_SIZE); }
-	if(lt->zchg_table_size) { lt_emit_u32(lt, lt->zchg_table_size); lt_emit_u8(lt, LT_SECTION_ZCHG_SIZE); }
+	if(lt->zfacname_predec_size) { lt_emit_u32(lt, lt->zfacname_predec_size); lt_emit_u8(lt, LT_SECTION_ZFACNAME_PREDEC_SIZE); lt->zfacname_predec_size = 0; }
+	if(lt->zfacname_size) { lt_emit_u32(lt, lt->zfacname_size); lt_emit_u8(lt, LT_SECTION_ZFACNAME_SIZE); lt->zfacname_size = 0; }
+	if(lt->zfacgeometry_size) { lt_emit_u32(lt, lt->zfacgeometry_size); lt_emit_u8(lt, LT_SECTION_ZFACNAME_GEOMETRY_SIZE); lt->zfacgeometry_size = 0; }
+	if(lt->zsync_table_size) { lt_emit_u32(lt, lt->zsync_table_size); lt_emit_u8(lt, LT_SECTION_ZSYNC_SIZE); lt->zsync_table_size = 0; }
+	if(lt->ztime_table_size) { lt_emit_u32(lt, lt->ztime_table_size); lt_emit_u8(lt, LT_SECTION_ZTIME_TABLE_SIZE); lt->ztime_table_size = 0; }
+	if(lt->chg_table_size) { lt_emit_u32(lt, lt->chg_table_size); lt_emit_u8(lt, LT_SECTION_ZCHG_PREDEC_SIZE); lt->chg_table_size = 0; }
+	if(lt->zchg_table_size) { lt_emit_u32(lt, lt->zchg_table_size); lt_emit_u8(lt, LT_SECTION_ZCHG_SIZE); lt->zchg_table_size = 0; }
 
 	/* Version 4 adds */
-	if(lt->dictionary_offset) { lt_emit_u32(lt, lt->dictionary_offset); lt_emit_u8(lt, LT_SECTION_ZDICTIONARY); }
-	if(lt->zdictionary_size) { lt_emit_u32(lt, lt->zdictionary_size); lt_emit_u8(lt, LT_SECTION_ZDICTIONARY_SIZE); }
+	if(lt->dictionary_offset) { lt_emit_u32(lt, lt->dictionary_offset); lt_emit_u8(lt, LT_SECTION_ZDICTIONARY); lt->dictionary_offset = 0; }
+	if(lt->zdictionary_size) { lt_emit_u32(lt, lt->zdictionary_size); lt_emit_u8(lt, LT_SECTION_ZDICTIONARY_SIZE); lt->zdictionary_size = 0; }
 
 	/* Version 5 adds */
-	if(lt->exclude_offset) { lt_emit_u32(lt, lt->exclude_offset); lt_emit_u8(lt, LT_SECTION_EXCLUDE_TABLE); }
+	if(lt->exclude_offset) { lt_emit_u32(lt, lt->exclude_offset); lt_emit_u8(lt, LT_SECTION_EXCLUDE_TABLE); lt->exclude_offset = 0; }
 
 	/* suffix */
 	lt_emit_u8(lt, LT_TRLID);
 
 	if(lt->symchain)
 		{
-		struct lt_symbol *s = lt->symchain;
+		struct lt_symbol *sc = lt->symchain;
 		struct lt_symbol *s2;
 		
-		while(s)
+		while(sc)
 			{
-			free(s->name);
-			s2=s->symchain;
-			free(s);
-			s=s2;
+			free(sc->name);
+			s2=sc->symchain;
+			free(sc);
+			sc=s2;
 			}
 		}
 	
@@ -1263,7 +1264,7 @@ if(lt)
 }
 
 
-/**
+/*
  * maint function for finding a symbol if it exists
  */
 struct lt_symbol *lt_symbol_find(struct lt_trace *lt, const char *name)
@@ -1275,7 +1276,7 @@ return(s);
 }
 
 
-/**
+/*
  * add a trace (if it doesn't exist already)
  */
 struct lt_symbol *lt_symbol_add(struct lt_trace *lt, const char *name, unsigned int rows, int msb, int lsb, int flags)
@@ -1316,7 +1317,7 @@ lt->numfacbytes += (len+1);
 return(s);
 }
 
-/**
+/*
  * add an alias trace (if it doesn't exist already and orig is found)
  */
 struct lt_symbol *lt_symbol_alias(struct lt_trace *lt, const char *existing_name, const char *alias, int msb, int lsb)
@@ -1360,7 +1361,7 @@ return(sa);
 }
 
 
-/** 
+/* 
  * set current time
  */
 int lt_inc_time_by_delta(struct lt_trace *lt, unsigned int timeval)
@@ -1422,7 +1423,7 @@ return(rc);
 }
 
 
-/**
+/*
  * sets trace timescale as 10**x seconds
  */
 void lt_set_timescale(struct lt_trace *lt, int timescale)
@@ -1434,7 +1435,7 @@ if(lt)
 }
 
 
-/**
+/*
  * sets clock compression heuristic
  */
 void lt_set_clock_compress(struct lt_trace *lt)
@@ -1446,7 +1447,7 @@ if(lt)
 }
 
 
-/**
+/*
  * sets change dump compression
  */
 void lt_set_chg_compress(struct lt_trace *lt)
@@ -1463,7 +1464,7 @@ if(lt)
 }
 
 
-/**
+/*
  * sets change dictionary compression
  */
 void lt_set_dict_compress(struct lt_trace *lt, unsigned int minwidth)
@@ -1479,7 +1480,7 @@ if((lt)&&(!lt->emitted))
 	}
 }
 
-/**
+/*
  * sets change interlace 
  */
 void lt_set_no_interlace(struct lt_trace *lt)
@@ -1541,7 +1542,7 @@ if((lt)&&(!lt->emitted)&&(!lt->sorted_facs))
 }
 
 
-/**
+/*
  * sets trace initial value
  */
 void lt_set_initial_value(struct lt_trace *lt, char value)
@@ -1573,7 +1574,7 @@ if(lt)
 }
 
 
-/**
+/*
  * Sets bracket stripping (useful for VCD conversions of
  * bitblasted nets)
  */
@@ -1586,7 +1587,7 @@ if(lt)
 }
 
 
-/**
+/*
  * emission for trace values..
  */
 static int lt_optimask[]=
@@ -1672,7 +1673,8 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 	int len = ((s->flags)&LT_SYM_F_INTEGER) ? 32 : s->len;
 	unsigned int last_change_delta;
 
-	if((lt->clock_compress)&&(s->rows==0)) {
+	if((lt->clock_compress)&&(s->rows==0))
+	{
 	if((len>1)&&(len<=32))
 		{
 		int ivalue = value;
@@ -1813,7 +1815,8 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 
 		s->clk_prevval = ivalue + '0';
 		}
-    }
+	}
+
 	/* normal trace handling */
 
 	last_change_delta = lt->position - s->last_change - 2;
@@ -2278,22 +2281,23 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 
 	int len = ((s->flags)&LT_SYM_F_INTEGER) ? 32 : s->len;
 
-	if((lt->clock_compress)&&(s->rows==0)) {
+	if((lt->clock_compress)&&(s->rows==0))
+	{
 	if((len>1)&&(len<=32))
 		{
 		int legal = 0;
 		int ivalue = 0;
 		int i;
-		char *pnt = value;
+		char *pntv = value;
 		int delta1, delta2;
 
 		for(i=0;i<len;i++)
 			{
-			if((*pnt!='0')&&(*pnt!='1'))
+			if((*pntv!='0')&&(*pntv!='1'))
 				{
-				if((!*pnt)&&(i>0))
+				if((!*pntv)&&(i>0))
 					{
-					pnt--;
+					pntv--;
 					}
 					else
 					{
@@ -2303,9 +2307,9 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 				}
 
 			ivalue = (((unsigned int)ivalue) << 1);
-			ivalue |= (*pnt & 1);
+			ivalue |= (*pntv & 1);
 			legal = 1;
-			pnt++;
+			pntv++;
 			}
 		s->clk_mask <<= 1;
 		s->clk_mask |= legal;
@@ -2442,7 +2446,8 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 
 		s->clk_prevval = value[0];
 		}
-    }
+	}
+
 	/* normal trace handling */
 
 	last_change_delta = lt->position - s->last_change - 2;
@@ -2580,7 +2585,7 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 
 		if(!tagadd)
 			{
-			int len = ((s->flags)&LT_SYM_F_INTEGER) ? 32 : s->len;
+			int len2 = ((s->flags)&LT_SYM_F_INTEGER) ? 32 : s->len;
 			if((mvl & (LT_MVL_2|LT_MVL_4|LT_MVL_9)) == LT_MVL_2)
 				{
 				int i;
@@ -2590,7 +2595,7 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 
 				pnt = value;				
 
-				if((lt->dictmode)&&(len>lt->mindictwidth))
+				if((lt->dictmode)&&(len2>lt->mindictwidth))
 					{
 					char *vpnt = value;
 					while ( (*vpnt == '0') && (*(vpnt+1)) ) vpnt++;
@@ -2647,7 +2652,7 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 						}
 					}
 				else
-				for(i=0;i<len;i++)
+				for(i=0;i<len2;i++)
 					{
 					if(*pnt)
 						{
@@ -2656,7 +2661,7 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 						}
 					outval |= (thisval<<bitpos);
 					bitpos--;
-					if((bitpos==-1)||(i==len-1))
+					if((bitpos==-1)||(i==len2-1))
 						{					
 						lt->lt_emit_u8(lt, outval); 
 						outval = 0;
@@ -2674,7 +2679,7 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 
 				pnt = value;				
 
-				for(i=0;i<len;i++)
+				for(i=0;i<len2;i++)
 					{
 					if(*pnt)
 						{
@@ -2690,7 +2695,7 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 						}
 					outval |= (thisval<<bitpos);
 					bitpos-=2;
-					if((bitpos==-2)||(i==len-1))
+					if((bitpos==-2)||(i==len2-1))
 						{					
 						lt->lt_emit_u8(lt, outval); 
 						outval = 0;
@@ -2708,7 +2713,7 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 
 				pnt = value;				
 
-				for(i=0;i<len;i++)
+				for(i=0;i<len2;i++)
 					{
 					if(*pnt)
 						{
@@ -2734,7 +2739,7 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 						}
 					outval |= (thisval<<bitpos);
 					bitpos-=4;
-					if((bitpos==-4)||(i==len-1))
+					if((bitpos==-4)||(i==len2-1))
 						{					
 						lt->lt_emit_u8(lt, outval); 
 						outval = 0;
@@ -2768,7 +2773,7 @@ return(rc);
 }
 
 
-/**
+/*
  * blackout functions
  */
 void lt_set_dumpoff(struct lt_trace *lt)
@@ -2807,3 +2812,26 @@ if((lt)&&(lt->dumpoff_active))
 	lt->dumpoff_active = 0;
 	}
 }
+
+/*
+ * $Id: lxt_write.c,v 1.2 2009-07-02 10:06:58 mcastet Exp $
+ * $Log: lxt_write.c,v $
+ * Revision 1.2  2009-07-02 10:06:58  mcastet
+ * update lxt_write.c
+ *
+ * Revision 1.4  2009/03/29 00:50:00  gtkwave
+ * update lt_close() to zero out written section offset/size.
+ *
+ * Revision 1.3  2009/03/29 00:05:23  gtkwave
+ * fixed & to && in if() comparison
+ *
+ * Revision 1.2  2008/12/20 05:08:26  gtkwave
+ * -Wshadow warning cleanups
+ *
+ * Revision 1.1.1.1  2007/05/30 04:28:14  gtkwave
+ * Imported sources
+ *
+ * Revision 1.2  2007/04/20 02:08:18  gtkwave
+ * initial release
+ *
+ */
