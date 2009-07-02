@@ -403,6 +403,7 @@ static void kernel_syscall_entry_process(struct ltt_module *mod,
         current_process = find_task_trace(res->pid);
         emit_trace(current_process, (union ltt_value)PROCESS_KERNEL);
         emit_trace(&current_process[1], (union ltt_value)"syscall %d", id);
+        /* TODO translate this to syscall functions. can use strace translation */
         emit_trace(&syscall_id, (union ltt_value)id);
         emit_trace(&syscall_pc, (union ltt_value)ip);
     }
