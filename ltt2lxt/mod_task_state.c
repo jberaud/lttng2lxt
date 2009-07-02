@@ -86,7 +86,7 @@ static void task_state_process_state_process(struct ltt_module *mod,
         return;
     }
 	if (pass == 1) {
-		find_or_add_task_trace(s, pid)/*[0].group = 0*/;
+		find_or_add_task_trace(clean_name(s), pid)/*[0].group = 0*/;
 	}
     if (pass == 2) {
         //XXX

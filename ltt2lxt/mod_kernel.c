@@ -61,6 +61,7 @@ static char *sofirq_tag [] = {
 #undef str
 static int softirqstate;
 static double softirqtime;
+static double irqtime;
 static double timer3clock;
 static double timer3diff;
 
@@ -72,6 +73,8 @@ static struct ltt_trace syscall_id;
 static struct ltt_trace syscall_pc;
 static struct ltt_trace sched_event;
 static struct ltt_trace mode;
+static struct ltt_trace printk_pc;
+static struct ltt_trace jiffies;
 
 static void init_traces(void)
 {
@@ -85,6 +88,8 @@ static void init_traces(void)
     init_trace(&syscall_pc, TG_PROCESS, 0.0, LT_SYM_F_ADDR, "SYSCALL (pc)");
     init_trace(&sched_event, TG_PROCESS, 0.0, LT_SYM_F_STRING, "Sched event");
     init_trace(&mode, TG_PROCESS, 0.0, LT_SYM_F_STRING, "MODE");
+    init_trace(&printk_pc, TG_PROCESS, 0.0, LT_SYM_F_ADDR, "printk (pc)");
+    init_trace(&jiffies, TG_IRQ, 0.0, LT_SYM_F_INTEGER, "jiffies");
 }
 
 static void kernel_common(struct parse_result *res, int pass)
@@ -136,6 +141,8 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
         emit_trace(&trace[irq], (union ltt_value)IRQ_RUNNING);
         emit_trace(&irq_pc, (union ltt_value)ip);
         irqtab[irqlevel++] = irq;
+
+        /* stat stuff */
         if (irq == 19) {
             if (timer3clock > 0) {
                 double diff = res->clock - timer3clock;
@@ -151,6 +158,10 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
 
             timer3clock = res->clock;
         }
+        /* only account on the first irq */
+        if (irqlevel == 1)
+            irqtime = res->clock;
+		/* end stat stuff */
     }
 }
 MODULE(kernel, irq_entry);
@@ -164,6 +175,11 @@ static void kernel_irq_exit_process(struct ltt_module *mod,
         if (irqlevel > 0) {
             emit_trace(&trace[irqtab[irqlevel-1]], (union ltt_value)IRQ_RUNNING);
         }
+        /* stat stuff */
+        /* we allow up to 0.1ms irq */
+        if (irqlevel == 0 && res->clock - irqtime > 0.0001)
+            TDIAG(res, "long irq %fs!!!\n", res->clock - irqtime);
+        /* end stat stuff */
     }
 }
 MODULE(kernel, irq_exit);
@@ -191,7 +207,9 @@ static void kernel_softirq_entry_process(struct ltt_module *mod,
             emit_trace(&sirq[1], (union ltt_value)"softirq %d", id);
         emit_trace(&sirq[2], (union ltt_value)s);
         softirqstate = SOFTIRQS_RUN;
+        /* stat stuff */
         softirqtime = res->clock;
+        /* end stat stuff */
     }
     free(s);
 }
@@ -210,9 +228,11 @@ static void kernel_softirq_exit_process(struct ltt_module *mod,
         else
             emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_IDLE);
         softirqstate = SOFTIRQS_IDLE;
-        /* we allow up to 0.5ms softirq */
-        if (res->clock - softirqtime > 0.0005)
+        /* stat stuff */
+        /* we allow up to 0.7ms softirq */
+        if (res->clock - softirqtime > 0.0007)
             TDIAG(res, "long softirq %fs!!!\n", res->clock - softirqtime);
+        /* end stat stuff */
     }
 }
 MODULE(kernel, softirq_exit);
@@ -430,4 +450,44 @@ static void kernel_process_free_process(struct ltt_module *mod,
     }
 }
 MODULE(kernel, process_free);
+
+static void kernel_printk_process(struct ltt_module *mod,
+                                             struct parse_result *res, int pass)
+{
+    unsigned int ip;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " ip = 0x%x",
+               &ip) != 1) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+
+    if (pass == 1) {
+        atag_store(ip);
+    }
+
+    if (pass == 2) {
+        emit_trace(&printk_pc, (union ltt_value)ip);
+    }
+}
+MODULE(kernel, printk);
+
+static void kernel_timer_update_time_process(struct ltt_module *mod,
+                                             struct parse_result *res, int pass)
+{
+    unsigned int c_jiffies;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " jiffies = %u",
+               &c_jiffies) != 1) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+
+    if (pass == 2) {
+        emit_trace(&jiffies, (union ltt_value)c_jiffies);
+    }
+}
+MODULE(kernel, timer_update_time);
 

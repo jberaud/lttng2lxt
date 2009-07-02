@@ -131,7 +131,7 @@ union ltt_value {
 
 #define TDIAG(res, _fmt, args...)               \
 	do {                                        \
-		fprintf(stderr, PFX "%s.%s @%fs :", res->module->channel, res->module->name, res->clock); \
+		fprintf(stderr, PFX "%s.%s\t@%.0f ns :", res->module->channel, res->module->name, res->clock*1000000000); \
 		fprintf(stderr, _fmt, ##args);          \
 	} while (0)
 
@@ -157,6 +157,15 @@ void init_trace(struct ltt_trace *tr,
 void refresh_name(struct ltt_trace *tr,
                 const char *fmt, ...);
 void symbol_flush(void);
+static inline char *clean_name(char *name) {
+    char *pname = name;
+    /* replace . by _ */
+    while ( (pname = strrchr(pname, '.')) ) {
+        *pname = '_';
+        pname++;
+    }
+    return name;
+}
 
 void emit_trace(struct ltt_trace *tr, union ltt_value value, ...);
 struct ltt_trace *trace_head(void);
