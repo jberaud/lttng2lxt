@@ -63,7 +63,7 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
         init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + pid, LT_SYM_F_STRING, "proc.sys.%s [%d] (info)", name, pid);
         ret = *((void**)ret);
     }
-    else {
+    else if (strcmp(name, "no name") != 0) {
         ret = *((void**)ret);
         refresh_name(&ret->data[0], "proc.state.%s [%d]", name, pid);
         refresh_name(&ret->data[1], "proc.sys.%s [%d] (info)", name, pid);
