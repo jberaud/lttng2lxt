@@ -83,7 +83,7 @@ static void scan_lttdump(const char *name)
 
 static void usage(void)
 {
-    fprintf (stderr, "\nUsage: ltt2lxt [-v] [-e <exefile>] "
+    fprintf (stderr, "\nUsage: ltt2lxt [-v] [-d] [-c] [-e <exefile>] "
 			 "<lttdump> [<lxtfile> <savefile>]\n");
     exit(1);
 }
