@@ -144,6 +144,7 @@ union ltt_value {
 extern struct lt_trace *lt;
 extern int verbose;
 extern int diag;
+extern int gtkwave_parrot;
 extern int atag_enabled;
 extern char *irq_tag[MAX_IRQS];
 

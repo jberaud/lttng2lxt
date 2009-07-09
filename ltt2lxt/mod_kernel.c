@@ -7,18 +7,18 @@
 #include "ltt2lxt.h"
 
 #define PROCESS_IDLE LT_IDLE
-#define PROCESS_KERNEL LT_S0
-#define PROCESS_USER LT_S1
-#define PROCESS_WAKEUP LT_S2
+#define PROCESS_KERNEL (gtkwave_parrot?LT_S0:LT_1)
+#define PROCESS_USER (gtkwave_parrot?LT_S1:LT_S0)
+#define PROCESS_WAKEUP (gtkwave_parrot?LT_S2:LT_0)
 #define PROCESS_DEAD LT_0
 
 #define SOFTIRQ_IDLE LT_IDLE
 #define SOFTIRQ_RUNNING LT_S0
-#define SOFTIRQ_RAISING LT_S2
+#define SOFTIRQ_RAISING (gtkwave_parrot?LT_S2:LT_0)
 
 #define IRQ_IDLE LT_IDLE
 #define IRQ_RUNNING LT_S0
-#define IRQ_PREEMPT LT_S2
+#define IRQ_PREEMPT (gtkwave_parrot?LT_S2:LT_0)
 
 /* nested irq stack */
 static int irqtab[MAX_IRQS];

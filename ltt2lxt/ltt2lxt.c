@@ -30,6 +30,7 @@
 
 int verbose = 0;
 int diag = 0;
+int gtkwave_parrot = 0;
 struct lt_trace *lt = NULL;
 
 static void scan_lttdump(const char *name)
@@ -95,7 +96,7 @@ int main(int argc, char *argv[])
     char *savefile;
     //uint32_t step, next_update;
 
-    while ((c = getopt(argc, argv, "hvse:")) != -1) {
+    while ((c = getopt(argc, argv, "hvdce:")) != -1) {
         switch (c) {
 
         case 'e':
@@ -106,8 +107,12 @@ int main(int argc, char *argv[])
             verbose = 1;
             break;
 
-        case 's':
+        case 'd':
             diag = 1;
+            break;
+
+        case 'c':
+            gtkwave_parrot = 1;
             break;
 
         case 'h':
