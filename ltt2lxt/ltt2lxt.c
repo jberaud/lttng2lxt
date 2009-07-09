@@ -29,6 +29,7 @@
 #include "ltt2lxt.h"
 
 int verbose = 0;
+int diag = 0;
 struct lt_trace *lt = NULL;
 
 static void scan_lttdump(const char *name)
@@ -94,7 +95,7 @@ int main(int argc, char *argv[])
     char *savefile;
     //uint32_t step, next_update;
 
-    while ((c = getopt(argc, argv, "hve:")) != -1) {
+    while ((c = getopt(argc, argv, "hvse:")) != -1) {
         switch (c) {
 
         case 'e':
@@ -103,6 +104,10 @@ int main(int argc, char *argv[])
 
         case 'v':
             verbose = 1;
+            break;
+
+        case 's':
+            diag = 1;
             break;
 
         case 'h':

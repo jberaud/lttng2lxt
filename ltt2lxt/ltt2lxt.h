@@ -131,8 +131,10 @@ union ltt_value {
 
 #define TDIAG(res, _fmt, args...)               \
 	do {                                        \
+	  if (diag) {                              \
 		fprintf(stderr, PFX "%s.%s\t@%.0f ns :", res->module->channel, res->module->name, res->clock*1000000000); \
 		fprintf(stderr, _fmt, ##args);          \
+	  }                                         \
 	} while (0)
 
 #define PARSE_ERROR(_mod_,_val_)										\
@@ -141,6 +143,7 @@ union ltt_value {
 
 extern struct lt_trace *lt;
 extern int verbose;
+extern int diag;
 extern int atag_enabled;
 extern char *irq_tag[MAX_IRQS];
 
