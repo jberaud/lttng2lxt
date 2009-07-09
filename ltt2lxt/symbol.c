@@ -25,6 +25,25 @@
 static struct ltt_trace *head = NULL;
 
 static int symbol_flushed;
+
+static void insert_symbol(struct ltt_trace *tr)
+{
+    tr->sym = lt_symbol_find(lt, tr->name);
+    if (!tr->sym) {
+        uint32_t flags = tr->flags;
+        if (tr->flags == LT_SYM_F_ADDR) {
+            flags = (atag_enabled)? LT_SYM_F_STRING : LT_SYM_F_INTEGER;
+        }
+        if (tr->flags == LT_SYM_F_U16) {
+            tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 15, 0);
+        }
+        else {
+            tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 0, flags);
+        }
+        assert(tr->sym);
+    }
+}
+
 void init_trace(struct ltt_trace *tr,
                 enum trace_group group,
                 double pos,
@@ -34,7 +53,6 @@ void init_trace(struct ltt_trace *tr,
     va_list ap;
     static char linebuf[LINEBUF_MAX];
 
-    assert(symbol_flushed == 0);
     if (tr->name == NULL) {
 
         tr->flags = flags;
@@ -50,6 +68,10 @@ void init_trace(struct ltt_trace *tr,
         tr->name = strdup(linebuf);
 
         INFO("adding trace '%s' group=%d pos=%g\n", linebuf, group, pos);
+        if (symbol_flushed) {
+            /* XXX hack late symbol flush */
+            insert_symbol(tr);
+        }
     }
 }
 
@@ -76,20 +98,7 @@ void symbol_flush(void)
     struct ltt_trace *tr;
 
     for (tr = trace_head(); tr; tr = tr->next) {
-        tr->sym = lt_symbol_find(lt, tr->name);
-        if (!tr->sym) {
-            uint32_t flags = tr->flags;
-            if (tr->flags == LT_SYM_F_ADDR) {
-                flags = (atag_enabled)? LT_SYM_F_STRING : LT_SYM_F_INTEGER;
-            }
-            if (tr->flags == LT_SYM_F_U16) {
-                tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 15, 0);
-            }
-            else {
-            	tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 0, flags);
-			}
-            assert(tr->sym);
-        }
+        insert_symbol(tr);
     }
     symbol_flushed = 1;
 }

@@ -31,7 +31,14 @@ struct ltt_trace * find_task_trace(int pid)
     tdata.pid = pid;
     ret = tfind(&tdata, &root, compare);
 
-    assert(ret);
+	/* XXX big hack
+	   This should be removed we use alias to track name */
+    if (ret == NULL) {
+		struct ltt_trace *r;
+        r =  find_or_add_task_trace(NULL, pid);
+		return r;
+    }
+	assert(ret);
     ret = *((void**)ret);
     return ret->data;
 }
