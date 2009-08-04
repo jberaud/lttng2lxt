@@ -134,8 +134,8 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
             DIAG("IRQ nesting level is too high (%d)\n", irqlevel);
             return;
         }
-        if (irq == irqtab[irqlevel-1]) {
-            DIAG("IRQ reentering in same irq (broken trace ?)\n");
+        if (irqlevel > 0 && irq == irqtab[irqlevel-1]) {
+            DIAG("IRQ reentering in same irq (broken trace ?) %d\n", irqlevel);
             return;
         }
 
