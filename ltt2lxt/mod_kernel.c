@@ -5,6 +5,12 @@
  */
 
 #include "ltt2lxt.h"
+/* generated from strace with 
+   grep "{"  syscallent.h | cut -d\" -f2 | sed -e 's/^/"/1' -e 's/$/",/g' > /tmp/syscall.h
+*/
+static const char *syscall_name[] = {
+#include "syscall.h"
+};
 
 #define PROCESS_IDLE LT_IDLE
 #define PROCESS_KERNEL (gtkwave_parrot?LT_S0:LT_1)
@@ -407,8 +413,10 @@ static void kernel_syscall_entry_process(struct ltt_module *mod,
         struct ltt_trace *current_process;
         current_process = find_task_trace(res->pid);
         emit_trace(current_process, (union ltt_value)PROCESS_KERNEL);
-        emit_trace(&current_process[1], (union ltt_value)"syscall %d", id);
-        /* TODO translate this to syscall functions. can use strace translation */
+		if (id < sizeof(syscall_name)/sizeof(syscall_name[0]))
+        	emit_trace(&current_process[1], (union ltt_value)syscall_name[id]);
+		else
+        	emit_trace(&current_process[1], (union ltt_value)"syscall %d", id);
         emit_trace(&syscall_id, (union ltt_value)id);
         emit_trace(&syscall_pc, (union ltt_value)ip);
     }
