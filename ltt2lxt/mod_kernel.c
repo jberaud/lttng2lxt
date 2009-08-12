@@ -349,10 +349,8 @@ static void kernel_sched_try_wakeup_process(struct ltt_module *mod,
     if (pass == 2) {
         emit_trace(&sched_event, (union ltt_value)"%d try wakeup %d", res->pid, pid);
         if (res->pid != pid) {
-            struct ltt_trace *current_process, *next_process;
-            current_process = find_task_trace(res->pid);
+            struct ltt_trace *next_process;
             next_process = find_task_trace(pid);
-            emit_trace(current_process, (union ltt_value)PROCESS_WAKEUP);
             emit_trace(next_process, (union ltt_value)PROCESS_WAKEUP);
         }
     }
