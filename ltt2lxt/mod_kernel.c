@@ -67,6 +67,7 @@ static char *sofirq_tag [] = {
 #undef str
 static int softirqstate;
 static double softirqtime;
+static char softirqtask[30];
 static double irqtime;
 static double timer3clock;
 static double timer3diff;
@@ -146,7 +147,8 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
         }
 
         if (irqlevel > 0) {
-            TDIAG(res, "nesting irq\n");
+            TDIAG(res, "nesting irq %s -> %s\n", irq_tag[irqtab[irqlevel-1]],
+					irq_tag[irq]);
             emit_trace(&trace[irqtab[irqlevel-1]], (union ltt_value)IRQ_PREEMPT);
         }
         emit_trace(&trace[irq], (union ltt_value)IRQ_RUNNING);
@@ -189,7 +191,8 @@ static void kernel_irq_exit_process(struct ltt_module *mod,
         /* stat stuff */
         /* we allow up to 0.1ms irq */
         if (irqlevel == 0 && res->clock - irqtime > 0.0001)
-            TDIAG(res, "long irq %fs!!!\n", res->clock - irqtime);
+            TDIAG(res, "long irq (%s) : %fs!!!\n", irq_tag[irqtab[0]],
+					res->clock - irqtime);
         /* end stat stuff */
     }
 }
@@ -219,6 +222,8 @@ static void kernel_softirq_entry_process(struct ltt_module *mod,
         emit_trace(&sirq[2], (union ltt_value)s);
         softirqstate = SOFTIRQS_RUN;
         /* stat stuff */
+		strncpy(softirqtask, s, sizeof(softirqtask));
+		softirqtask[sizeof(softirqtask)-1] = 0;
         softirqtime = res->clock;
         /* end stat stuff */
     }
@@ -242,7 +247,8 @@ static void kernel_softirq_exit_process(struct ltt_module *mod,
         /* stat stuff */
         /* we allow up to 0.7ms softirq */
         if (res->clock - softirqtime > 0.0007)
-            TDIAG(res, "long softirq %fs!!!\n", res->clock - softirqtime);
+            TDIAG(res, "long softirq(%s) :  %fs!!!\n", softirqtask,
+					res->clock - softirqtime);
         /* end stat stuff */
     }
 }
@@ -290,6 +296,10 @@ static void kernel_tasklet_low_entry_process(struct ltt_module *mod,
     if (pass == 2) {
         emit_trace(&tlow[0], (union ltt_value)LT_S0);
         emit_trace(&tlow[1], (union ltt_value)func);
+		if (atag_enabled) {
+			strncpy(softirqtask, atag_get(func), sizeof(softirqtask));
+			softirqtask[sizeof(softirqtask)-1] = 0;
+		}
     }
 }
 MODULE(kernel, tasklet_low_entry);
