@@ -448,7 +448,7 @@ static void kernel_syscall_exit_process(struct ltt_module *mod,
         current_process = find_task_trace(res->pid);
         emit_trace(current_process, (union ltt_value)PROCESS_USER);
         /* ret is not valid ... */
-        //emit_trace(&current_process[1], (union ltt_value)"%d", ret);
+        emit_trace(&current_process[1], (union ltt_value)"->%d", ret);
     }
 }
 MODULE(kernel, syscall_exit);
