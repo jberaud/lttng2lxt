@@ -5,6 +5,8 @@
  */
 
 #include "ltt2lxt.h"
+#define PROCESS_STATE "proc.state.[%d] %s"
+#define PROCESS_INFO "proc.sys.[%d] %s (info)"
 
 struct tdata {
     int pid;
@@ -66,14 +68,14 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
         ret->data = data;
         ret = tsearch(ret, &root, compare);
         assert(ret);
-        init_trace(&data[0], TG_PROCESS, 1.0 + pid, LT_SYM_F_BITS, "proc.state.%s [%d]", name, pid);
-        init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + pid, LT_SYM_F_STRING, "proc.sys.%s [%d] (info)", name, pid);
+        init_trace(&data[0], TG_PROCESS, 1.0 + pid, LT_SYM_F_BITS, PROCESS_STATE, pid, name);
+        init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + pid, LT_SYM_F_STRING, PROCESS_INFO, pid, name);
         ret = *((void**)ret);
     }
     else if (strcmp(name, "no name") != 0) {
         ret = *((void**)ret);
-        refresh_name(&ret->data[0], "proc.state.%s [%d]", name, pid);
-        refresh_name(&ret->data[1], "proc.sys.%s [%d] (info)", name, pid);
+        refresh_name(&ret->data[0], PROCESS_STATE, pid, name);
+        refresh_name(&ret->data[1], PROCESS_INFO, pid, name);
     }
     
     return ret->data;
