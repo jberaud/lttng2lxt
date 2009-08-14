@@ -40,6 +40,7 @@ char *irq_tag[MAX_IRQS] = {
 	"USB0",
 	"USB1",
 	"MMCIX",
+	[32 ... MAX_IRQS-1] = "gpio",
 };
 
 static void irq_state_interrupt_process(struct ltt_module *mod,
