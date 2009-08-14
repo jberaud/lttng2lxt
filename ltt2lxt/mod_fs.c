@@ -15,6 +15,7 @@ static void fs_exec_process(struct ltt_module *mod,
         PARSE_ERROR(mod, res->values);
         return;
     }
+	free(s);
 
 	/*
     if (pass == 1) {
