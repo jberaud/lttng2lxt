@@ -82,6 +82,7 @@ static struct ltt_trace sched_event;
 static struct ltt_trace mode;
 static struct ltt_trace printk_pc;
 static struct ltt_trace jiffies;
+static struct ltt_trace parrot_evt;
 
 static void init_traces(void)
 {
@@ -97,6 +98,7 @@ static void init_traces(void)
     init_trace(&mode, TG_PROCESS, 0.0, LT_SYM_F_STRING, "MODE");
     init_trace(&printk_pc, TG_PROCESS, 0.0, LT_SYM_F_ADDR, "printk (pc)");
     init_trace(&jiffies, TG_IRQ, 0.0, LT_SYM_F_INTEGER, "jiffies");
+    init_trace(&parrot_evt, TG_PROCESS, 0, LT_SYM_F_STRING, "kernel event");
 }
 
 static void kernel_common(struct parse_result *res, int pass)
@@ -104,6 +106,7 @@ static void kernel_common(struct parse_result *res, int pass)
     static char old_mode [15];
 
     if (pass == 1) {
+        init_traces();
         find_or_add_task_trace(res->pname, res->pid);
     }
     if (pass == 2) {
@@ -132,7 +135,6 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
     }
 
     if (pass == 1) {
-        init_traces();
         init_trace(&trace[irq], TG_IRQ, 1.0+irq, LT_SYM_F_BITS, irq_tag[irq]);
         atag_store(ip);
     }
@@ -209,9 +211,6 @@ static void kernel_softirq_entry_process(struct ltt_module *mod,
         PARSE_ERROR(mod, res->values);
         return;
     }
-    if (pass == 1) {
-        init_traces();
-    }
     if (pass == 2) {
         emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_RUNNING);
         if (id < sizeof(sofirq_tag) && sofirq_tag[id])
@@ -234,9 +233,6 @@ static void kernel_softirq_exit_process(struct ltt_module *mod,
                                         struct parse_result *res, int pass)
 {
     kernel_common(res, pass);
-    if (pass == 1) {
-        init_traces();
-    }
     if (pass == 2) {
         if (softirqstate == SOFTIRQS_RAISE)
             emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_RAISING);
@@ -259,9 +255,6 @@ static void kernel_softirq_raise_process(struct ltt_module *mod,
     int id;
 
     kernel_common(res, pass);
-    if (pass == 1) {
-        init_traces();
-    }
     if (sscanf(res->values, " softirq_id = %d", &id) != 1) {
         PARSE_ERROR(mod, res->values);
         return;
@@ -289,7 +282,6 @@ static void kernel_tasklet_low_entry_process(struct ltt_module *mod,
         return;
     }
     if (pass == 1) {
-        init_traces();
         atag_store(func);
     }
     if (pass == 2) {
@@ -308,7 +300,6 @@ static void kernel_tasklet_low_exit_process(struct ltt_module *mod,
 {
     kernel_common(res, pass);
     if (pass == 1) {
-        init_traces();
     }
     if (pass == 2) {
         emit_trace(&tlow[0], (union ltt_value)LT_IDLE);
@@ -530,3 +521,30 @@ static void kernel_thread_setname_process(struct ltt_module *mod,
 }
 MODULE(kernel, thread_setname);
 
+static void kernel_parrot_evt_start_process(struct ltt_module *mod,
+                                         struct parse_result *res, int pass)
+{
+    int id;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " id = %d", &id) != 1) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+    emit_trace(&parrot_evt, (union ltt_value)"<-%d", id);
+}
+MODULE(kernel, parrot_evt_start);
+
+static void kernel_parrot_evt_stop_process(struct ltt_module *mod,
+                                         struct parse_result *res, int pass)
+{
+    int id;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " id = %d", &id) != 1) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+    emit_trace(&parrot_evt, (union ltt_value)"%d->", id);
+}
+MODULE(kernel, parrot_evt_stop);
