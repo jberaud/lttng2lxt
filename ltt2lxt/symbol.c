@@ -88,6 +88,7 @@ void refresh_name(struct ltt_trace *tr,
     va_end(ap);
 
     if (strcmp(tr->name, linebuf)) {
+        INFO("refreshing %s -> %s\n", tr->name, linebuf);
         free((char *)tr->name);
         tr->name = strdup(linebuf);
     }
