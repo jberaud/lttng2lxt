@@ -211,7 +211,6 @@ static void kernel_softirq_entry_process(struct ltt_module *mod,
     }
     if (pass == 1) {
         init_traces();
-        return;
     }
     if (pass == 2) {
         emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_RUNNING);
@@ -512,4 +511,22 @@ static void kernel_timer_update_time_process(struct ltt_module *mod,
     }
 }
 MODULE(kernel, timer_update_time);
+
+static void kernel_thread_setname_process(struct ltt_module *mod,
+                                         struct parse_result *res, int pass)
+{
+    int id;
+    char *s;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " pid = %d , name = \"%m[^\"]\"", &id, &s) != 2) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+    if (pass == 1) {
+        find_or_add_task_trace(s, id);
+    }
+    free(s);
+}
+MODULE(kernel, thread_setname);
 

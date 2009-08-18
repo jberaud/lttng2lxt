@@ -72,7 +72,9 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
         init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + pid, LT_SYM_F_STRING, PROCESS_INFO, pid, name);
         ret = *((void**)ret);
     }
-    else if (strcmp(name, "no name") != 0) {
+    else if (strcmp(name, "no name") != 0 &&
+			strcmp(name, "kthreadd") != 0 /* XXX */
+			) {
         ret = *((void**)ret);
         refresh_name(&ret->data[0], PROCESS_STATE, pid, name);
         refresh_name(&ret->data[1], PROCESS_INFO, pid, name);
