@@ -104,5 +104,6 @@ static void task_state_process_state_process(struct ltt_module *mod,
 		if (status == 1) 
         	emit_trace(find_task_trace(pid), (union ltt_value)LT_S0);
     }
+	free(s);
 }
 MODULE(task_state, process_state);
