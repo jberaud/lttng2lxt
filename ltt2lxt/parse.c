@@ -61,6 +61,7 @@ int parse_line(char *line, struct parse_result *res)
 	PARSE(line, ',', dummy, 1);
 	PARSE(line, ',', mode, 1);
 	PARSE(line, ' ', dummy, 0);
+	assert(*line == '{');
 	PARSE(line, '{', values, 0);
 	PARSE(line, '}', dummy, 0);
 	assert(strcmp(line, "\n") == 0);
