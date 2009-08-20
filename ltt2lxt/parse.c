@@ -26,14 +26,14 @@ void parse_init(void)
 {
 }
 
-#define PARSE(_line, _tok, _name) \
+#define PARSE(_line, _tok, _name, _strip_space) \
 	do { \
 	_line = strchr(_line, _tok); \
 	if (_line == NULL) \
 		return -1; \
 	*_line = '\0'; \
 	_line++; \
-	if (*_line == ' ') \
+	while (_strip_space && *_line == ' ') \
 		_line++; \
 	_name = _line; \
 	} while(0)
@@ -51,17 +51,18 @@ int parse_line(char *line, struct parse_result *res)
 
 
 	channel = line;
-	PARSE(line, '.', name);
-	PARSE(line, ':', clock);
-	PARSE(line, ',', pid);
-	PARSE(line, ',', dummy);
-	PARSE(line, ',', pname);
-	PARSE(line, ',', dummy);
-	PARSE(line, ',', dummy);
-	PARSE(line, ',', mode);
-	PARSE(line, ' ', dummy);
-	PARSE(line, '{', values);
-	PARSE(line, '}', dummy);
+	PARSE(line, '.', name, 0);
+	PARSE(line, ':', clock, 1);
+	PARSE(line, ',', pid, 1);
+	PARSE(line, ',', dummy, 1);
+	PARSE(line, ',', pname, 1);
+	PARSE(line, ',', dummy, 1);
+	PARSE(line, ',', dummy, 1);
+	PARSE(line, ',', dummy, 1);
+	PARSE(line, ',', mode, 1);
+	PARSE(line, ' ', dummy, 0);
+	PARSE(line, '{', values, 0);
+	PARSE(line, '}', dummy, 0);
 	assert(strcmp(line, "\n") == 0);
 
 	res->clock = atof(clock);
