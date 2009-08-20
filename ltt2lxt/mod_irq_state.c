@@ -59,7 +59,7 @@ static void irq_state_interrupt_process(struct ltt_module *mod,
 		/* XXX we can leak memory here */
         if (irq < MAX_IRQS) {
             if (strcmp(irq_tag[irq], s2)) {
-				printf("%s -> %s\n", irq_tag[irq], s2);
+				INFO("%s -> %s\n", irq_tag[irq], s2);
                 irq_tag[irq] = strdup(s2);
 			}
         }
