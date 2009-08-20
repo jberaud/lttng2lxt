@@ -22,62 +22,53 @@
 
 #include "ltt2lxt.h"
 
-#define _CH           "\\([^\\.]\\+\\)"
-#define _N            "\\([^\\:]\\+\\)"
-#define _CLK          "\\([0-9\\.]\\+\\)"
-#define _FILE         " ([^)]*),"
-#define _PID          " \\([0-9]\\+\\),"
-#define _PNAME        " \\([^,]*\\),"
-#define _HEX          " \\(0x[0-9A-Fa-f]\\),"
-#define _MODE         " \\([A-Z_]\\+\\)"
-#define _VAL          " {\\([^}]\\+\\) }"
-
-#define LINE_REGEX                                                      \
-    "^" _CH "." _N ": " _CLK _FILE _PID _PID _PNAME " ," _PID _HEX _MODE _VAL
-
-#define LINE_MATCHES  (11)
-
-static regex_t line_preg;
-
 void parse_init(void)
 {
-	int ret = regcomp(&line_preg, LINE_REGEX, 0);
-	assert(ret == 0);
 }
 
-int parse_line(const char *line, struct parse_result *res)
+#define PARSE(_line, _tok, _name) \
+	do { \
+	_line = strchr(_line, _tok); \
+	if (_line == NULL) \
+		return -1; \
+	*_line = '\0'; \
+	_line++; \
+	if (*_line == ' ') \
+		_line++; \
+	_name = _line; \
+	} while(0)
+
+int parse_line(char *line, struct parse_result *res)
 {
-	int i, ret;
 	const char *channel;
 	const char *name;
-	regmatch_t match[LINE_MATCHES];
-	static char *smatch[LINE_MATCHES] = {NULL, NULL, NULL, NULL, NULL};
+	const char *clock;
+	const char *pid;
+	char *pname;
+	const char *mode;
+	const char *values;
+	const char *dummy;
 
-	/* TODO this is very slow (take 75% of time), and should replaced by a more simple
-	   token parser
-	 */
-	ret = regexec(&line_preg, line, LINE_MATCHES, match, 0);
 
-	if ((ret == REG_NOMATCH) || (match[LINE_MATCHES-1].rm_so == -1)) {
-		/* no match */
-		return -1;
-	}
-	/* store match strings */
-	for (i = 1; i < LINE_MATCHES; i++) {
-		if (smatch[i]) {
-			free(smatch[i]);
-		}
-		smatch[i] = strndup(line + match[i].rm_so,
-							match[i].rm_eo-match[i].rm_so);
-		assert(smatch[i]);
-	}
-	channel = smatch[1];
-	name = smatch[2];
-	res->clock = atof(smatch[3]);
-	res->pid = atoi(smatch[4]);
-	res->pname = clean_name(smatch[6]);
-	res->mode = smatch[9];
-	res->values = smatch[10];
+	channel = line;
+	PARSE(line, '.', name);
+	PARSE(line, ':', clock);
+	PARSE(line, ',', pid);
+	PARSE(line, ',', dummy);
+	PARSE(line, ',', pname);
+	PARSE(line, ',', dummy);
+	PARSE(line, ',', dummy);
+	PARSE(line, ',', mode);
+	PARSE(line, ' ', dummy);
+	PARSE(line, '{', values);
+	PARSE(line, '}', dummy);
+	assert(strcmp(line, "\n") == 0);
+
+	res->clock = atof(clock);
+	res->pid = atoi(pid);
+	res->pname = clean_name(pname);
+	res->mode = mode;
+	res->values = values;
 
 	res->module = find_module_by_name(channel, name);
 

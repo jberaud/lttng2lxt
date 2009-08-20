@@ -178,7 +178,7 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid);
 struct ltt_trace * find_task_trace(int pid);
 
 void parse_init(void);
-int parse_line(const char *line, struct parse_result *res);
+int parse_line(char *line, struct parse_result *res);
 
 void modules_init(void);
 struct ltt_module *find_module_by_name(const char *channel, const char *name);
