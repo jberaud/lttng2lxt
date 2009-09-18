@@ -63,8 +63,9 @@ int parse_line(char *line, struct parse_result *res)
 	PARSE(line, ' ', dummy, 0);
 	assert(*line == '{');
 	PARSE(line, '{', values, 0);
-	PARSE(line, '}', dummy, 0);
-	assert(strcmp(line, "\n") == 0);
+	line = line + strlen(line) - 2;
+	assert(strcmp(line, "}\n") == 0);
+	*line = '\0';
 
 	res->clock = atof(clock);
 	res->pid = atoi(pid);
