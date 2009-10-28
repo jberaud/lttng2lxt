@@ -531,7 +531,9 @@ static void kernel_parrot_evt_start_process(struct ltt_module *mod,
         PARSE_ERROR(mod, res->values);
         return;
     }
-    emit_trace(&parrot_evt, (union ltt_value)"<-%d", id);
+    if (pass == 2) {
+        emit_trace(&parrot_evt, (union ltt_value)"<-%d", id);
+    }
 }
 MODULE(kernel, parrot_evt_start);
 
@@ -545,6 +547,8 @@ static void kernel_parrot_evt_stop_process(struct ltt_module *mod,
         PARSE_ERROR(mod, res->values);
         return;
     }
-    emit_trace(&parrot_evt, (union ltt_value)"%d->", id);
+    if (pass == 2) {
+        emit_trace(&parrot_evt, (union ltt_value)"%d->", id);
+    }
 }
 MODULE(kernel, parrot_evt_stop);
