@@ -52,6 +52,9 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
     tdata.pid = pid;
     ret = tfind(&tdata, &root, compare);
 
+    if (name && strcmp(name, "swapper") == 0) {
+        name = "idle thread";
+    }
     if (!ret) {
         struct ltt_trace *data;
 		/* this can happen if we on the first cs from this process */
