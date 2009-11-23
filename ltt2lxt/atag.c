@@ -22,7 +22,7 @@
 
 #include "ltt2lxt.h"
 
-#define HASHTAB_SIZE            (20011)
+#define HASHTAB_SIZE            (100000)
 #define ADDR2LINE_MAX           (128)
 
 int atag_enabled = 0;
