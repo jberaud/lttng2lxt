@@ -26,6 +26,10 @@ static const char *syscall_name[] = {
 #define IRQ_RUNNING LT_S0
 #define IRQ_PREEMPT (gtkwave_parrot?LT_S2:LT_0)
 
+#define IDLE_CPU_IDLE IRQ_IDLE
+#define IDLE_CPU_RUNNING IRQ_RUNNING
+#define IDLE_CPU_PREEMPT IRQ_IDLE
+
 /* nested irq stack */
 static int irqtab[MAX_IRQS];
 static int irqlevel = 0;
@@ -71,6 +75,11 @@ static char softirqtask[30];
 static double irqtime;
 static double timer3clock;
 static double timer3diff;
+enum {
+    IDLE_IDLE,
+    IDLE_RUNNING,
+};
+static int idle_cpu_state;
 
 static struct ltt_trace irq_pc;
 static struct ltt_trace sirq[3];
@@ -83,6 +92,8 @@ static struct ltt_trace mode;
 static struct ltt_trace printk_pc;
 static struct ltt_trace jiffies;
 static struct ltt_trace parrot_evt;
+static struct ltt_trace idle_cpu;
+static struct ltt_trace cpu_load;
 
 static void init_traces(void)
 {
@@ -98,12 +109,56 @@ static void init_traces(void)
     init_trace(&mode, TG_PROCESS, 0.0, LT_SYM_F_STRING, "MODE");
     init_trace(&printk_pc, TG_PROCESS, 0.0, LT_SYM_F_ADDR, "printk (pc)");
     init_trace(&jiffies, TG_IRQ, 0.0, LT_SYM_F_INTEGER, "jiffies");
-    init_trace(&parrot_evt, TG_PROCESS, 0, LT_SYM_F_STRING, "kernel event");
+    init_trace(&parrot_evt, TG_PROCESS, 0.0, LT_SYM_F_STRING, "kernel event");
+    init_trace(&idle_cpu, TG_PROCESS, 0.0, LT_SYM_F_BITS, "global idle");
+    init_trace(&cpu_load, TG_IRQ, 0.0, LT_SYM_F_ANALOG, "cpu load");
+}
+
+static double emit_cpu_idle_state(struct parse_result *res, union ltt_value val)
+{
+    static double run_start;
+    static double total_run;
+    double ret;
+    if (val.state) {
+        emit_trace(&idle_cpu, val);
+
+        //printf("clock %f %s start %f  total %f\n", res->clock, val.state, run_start, total_run);
+		/* if running account the time */
+        if (strcmp(val.state, IRQ_RUNNING) == 0) {
+			/* if already started, do nothing */
+            if (run_start == 0)
+                run_start = res->clock;
+        }
+		/* if stoping record the idle time */
+        else {
+			/* if already stop, do nothing */
+            if (run_start > 0) {
+                total_run += res->clock - run_start;
+                run_start = 0;
+            }
+        }
+        //printf("%s start %f  total %f\n", val.state, run_start, total_run);
+        ret = total_run;
+    }
+	/* give the total idle time and reset counter */
+    else {
+        /* idle is running */
+        if (run_start > 0) {
+            total_run += res->clock - run_start;
+            run_start = res->clock;
+        }
+        ret = total_run;
+        /* reset counter */
+        total_run = 0;
+        //printf("total clock : %f ret : %f\n", res->clock, ret);
+    }
+    return ret;
 }
 
 static void kernel_common(struct parse_result *res, int pass)
 {
     static char old_mode [15];
+    static double start_time;
 
     if (pass == 1) {
         init_traces();
@@ -114,6 +169,15 @@ static void kernel_common(struct parse_result *res, int pass)
             emit_trace(&mode, (union ltt_value)res->mode);
         memcpy(old_mode, res->mode, sizeof(old_mode));
         old_mode[sizeof(old_mode)-1] = 0;
+
+		/* 300 ms average for cpu load */
+		if (res->clock - start_time > 0.3) {
+			double idle_run = emit_cpu_idle_state(res, (union ltt_value)(char *)NULL);
+			if (start_time > 0) {
+				emit_trace(&cpu_load, (union ltt_value)(1.0-idle_run/(res->clock - start_time)));
+			}
+			start_time = res->clock;
+		}
     }
 }
 
@@ -150,13 +214,15 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
 
         if (irqlevel > 0) {
             TDIAG(res, "nesting irq %s -> %s\n", irq_tag[irqtab[irqlevel-1]],
-					irq_tag[irq]);
+                    irq_tag[irq]);
             emit_trace(&trace[irqtab[irqlevel-1]], (union ltt_value)IRQ_PREEMPT);
         }
         emit_trace(&trace[irq], (union ltt_value)IRQ_RUNNING);
         emit_trace(&irq_pc, (union ltt_value)ip);
         irqtab[irqlevel++] = irq;
 
+        if (irqlevel == 1)
+            emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_PREEMPT);
         /* stat stuff */
         if (irq == 19) {
             if (timer3clock > 0) {
@@ -176,7 +242,7 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
         /* only account on the first irq */
         if (irqlevel == 1)
             irqtime = res->clock;
-		/* end stat stuff */
+        /* end stat stuff */
     }
 }
 MODULE(kernel, irq_entry);
@@ -190,11 +256,15 @@ static void kernel_irq_exit_process(struct ltt_module *mod,
         if (irqlevel > 0) {
             emit_trace(&trace[irqtab[irqlevel-1]], (union ltt_value)IRQ_RUNNING);
         }
+        if (irqlevel == 0 && idle_cpu_state == IDLE_RUNNING)
+            emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_RUNNING);
+        else 
+            emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_IDLE);
         /* stat stuff */
         /* we allow up to 0.1ms irq */
         if (irqlevel == 0 && res->clock - irqtime > 0.0001)
             TDIAG(res, "long irq (%s) : %fs!!!\n", irq_tag[irqtab[0]],
-					res->clock - irqtime);
+                    res->clock - irqtime);
         /* end stat stuff */
     }
 }
@@ -213,6 +283,7 @@ static void kernel_softirq_entry_process(struct ltt_module *mod,
     }
     if (pass == 2) {
         emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_RUNNING);
+        emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_PREEMPT);
         if (id < sizeof(sofirq_tag) && sofirq_tag[id])
             emit_trace(&sirq[1], (union ltt_value)sofirq_tag[id]);
         else
@@ -220,8 +291,8 @@ static void kernel_softirq_entry_process(struct ltt_module *mod,
         emit_trace(&sirq[2], (union ltt_value)s);
         softirqstate = SOFTIRQS_RUN;
         /* stat stuff */
-		strncpy(softirqtask, s, sizeof(softirqtask));
-		softirqtask[sizeof(softirqtask)-1] = 0;
+        strncpy(softirqtask, s, sizeof(softirqtask));
+        softirqtask[sizeof(softirqtask)-1] = 0;
         softirqtime = res->clock;
         /* end stat stuff */
     }
@@ -238,12 +309,16 @@ static void kernel_softirq_exit_process(struct ltt_module *mod,
             emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_RAISING);
         else
             emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_IDLE);
+        if (idle_cpu_state == IDLE_RUNNING)
+            emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_RUNNING);
+        else
+            emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_IDLE);
         softirqstate = SOFTIRQS_IDLE;
         /* stat stuff */
         /* we allow up to 0.7ms softirq */
         if (res->clock - softirqtime > 0.0007)
             TDIAG(res, "long softirq(%s) :  %fs!!!\n", softirqtask,
-					res->clock - softirqtime);
+                    res->clock - softirqtime);
         /* end stat stuff */
     }
 }
@@ -287,10 +362,10 @@ static void kernel_tasklet_low_entry_process(struct ltt_module *mod,
     if (pass == 2) {
         emit_trace(&tlow[0], (union ltt_value)LT_S0);
         emit_trace(&tlow[1], (union ltt_value)func);
-		if (atag_enabled) {
-			strncpy(softirqtask, atag_get(func), sizeof(softirqtask));
-			softirqtask[sizeof(softirqtask)-1] = 0;
-		}
+        if (atag_enabled) {
+            strncpy(softirqtask, atag_get(func), sizeof(softirqtask));
+            softirqtask[sizeof(softirqtask)-1] = 0;
+        }
     }
 }
 MODULE(kernel, tasklet_low_entry);
@@ -322,6 +397,10 @@ static void kernel_sched_schedule_process(struct ltt_module *mod,
         struct ltt_trace *current_process;
         current_process = find_task_trace(prev_pid);
         emit_trace(current_process,(union ltt_value)PROCESS_IDLE);
+        if (prev_pid == 0) {
+            emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_IDLE);
+            idle_cpu_state = IDLE_IDLE;
+        }
 
         current_process = find_task_trace(next_pid);
         /* XXX this is often buggy : some process are in SYCALL mode while running
@@ -331,6 +410,10 @@ static void kernel_sched_schedule_process(struct ltt_module *mod,
             emit_trace(current_process, (union ltt_value)PROCESS_USER);
         else
             emit_trace(current_process, (union ltt_value)PROCESS_KERNEL);
+        if (next_pid == 0) {
+            emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_RUNNING);
+            idle_cpu_state = IDLE_RUNNING;
+        }
     }
 }
 MODULE(kernel, sched_schedule);
@@ -411,10 +494,10 @@ static void kernel_syscall_entry_process(struct ltt_module *mod,
         struct ltt_trace *current_process;
         current_process = find_task_trace(res->pid);
         emit_trace(current_process, (union ltt_value)PROCESS_KERNEL);
-		if (id < sizeof(syscall_name)/sizeof(syscall_name[0]))
-        	emit_trace(&current_process[1], (union ltt_value)syscall_name[id]);
-		else
-        	emit_trace(&current_process[1], (union ltt_value)"syscall %d", id);
+        if (id < sizeof(syscall_name)/sizeof(syscall_name[0]))
+            emit_trace(&current_process[1], (union ltt_value)syscall_name[id]);
+        else
+            emit_trace(&current_process[1], (union ltt_value)"syscall %d", id);
         emit_trace(&syscall_id, (union ltt_value)id);
         emit_trace(&syscall_pc, (union ltt_value)ip);
     }
