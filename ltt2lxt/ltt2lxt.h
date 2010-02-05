@@ -65,7 +65,8 @@ enum trace_group {
 };
 
 //! Additional pseudo-trace symbol type
-#define LT_SYM_F_U16          (1<<30)
+#define LT_SYM_F_ANALOG        ((1<<29)|LT_SYM_F_DOUBLE)
+#define LT_SYM_F_U16           ((1<<30)|LT_SYM_F_INTEGER)
 #define LT_SYM_F_ADDR          (1<<31)
 
 struct ltt_trace {
@@ -97,6 +98,7 @@ union ltt_value {
     char       *state;
     uint32_t    data;
     const char *format;
+    double      dataf;
 };
 
 #define __str(_x)       #_x

@@ -35,10 +35,10 @@ static void insert_symbol(struct ltt_trace *tr)
             flags = (atag_enabled)? LT_SYM_F_STRING : LT_SYM_F_INTEGER;
         }
         if (tr->flags == LT_SYM_F_U16) {
-            tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 15, 0);
+            tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 15, flags & 0xff);
         }
         else {
-            tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 0, flags);
+            tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 0, flags & 0xff);
         }
         assert(tr->sym);
     }
@@ -121,6 +121,10 @@ void emit_trace(struct ltt_trace *tr, union ltt_value value, ...)
         assert(value.data <= 0xffff);
     case LT_SYM_F_INTEGER:
         lt_emit_value_int(lt, tr->sym, 0, value.data);
+        break;
+
+    case LT_SYM_F_ANALOG:
+        lt_emit_value_double(lt, tr->sym, 0, value.dataf);
         break;
 
     case LT_SYM_F_STRING:

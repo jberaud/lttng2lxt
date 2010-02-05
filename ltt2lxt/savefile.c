@@ -74,8 +74,12 @@ static void print_group(enum trace_group group, const char *name, FILE *fp,
             flag |= (tab[i]->sym->flags & LT_SYM_F_INTEGER)? TR_HEX : 0;
             flag |= (tab[i]->sym->flags & LT_SYM_F_STRING)?  TR_ASCII : 0;
 
+            /* overides */
+            if (tab[i]->flags == LT_SYM_F_ANALOG)
+                flag = TR_ANALOG_INTERPOLATED|TR_DEC|TR_ANALOG_FULLSCALE;
+
             fprintf(fp, "@%x\n%s%s\n", flag|TR_RJUSTIFY, tab[i]->sym->name,
-                    (tab[i]->flags & LT_SYM_F_U16)? "[0:15]":"");
+                    (tab[i]->flags == LT_SYM_F_U16)? "[0:15]":"");
         }
     }
 }
