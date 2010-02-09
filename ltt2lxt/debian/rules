@@ -1,0 +1,41 @@
+#!/usr/bin/make -f
+
+DEB_SOURCE := $(shell dpkg-parsechangelog | sed -n 's/^Source: //p')
+destdir:=$(shell pwd)/debian/$(DEB_SOURCE)
+
+build: build-stamp
+build-stamp:
+	dh_testdir
+	touch build-stamp
+	make DESTDIR=$(destdir) PREFIX=/usr/local
+
+clean:
+	dh_testdir
+	dh_testroot
+	-rm -f build-stamp install-stamp
+	dh_clean
+
+install: install-stamp
+install-stamp: build-stamp
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs usr/local
+	make DESTDIR=$(destdir) PREFIX=/usr/local install-bin
+	touch install-stamp
+
+binary-indep: build install
+
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install

@@ -1,0 +1,9 @@
+parrot-tools-ltt (0.1.0-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Matthieu CASTET <matthieu.castet@parrot.com>  Wed, 05 Feb 2010 11:11:29 +0200
+
+Local variables:
+mode: debian-changelog
+End:

@@ -1,0 +1,13 @@
+Source: parrot-tools-ltt
+Section: utils
+Priority: optional
+Maintainer: Matthieu CASTET <matthieu.castet@parrot.com>
+Standards-Version: 3.7.3.0
+Build-Depends: debhelper (>= 4)
+
+Package: parrot-tools-ltt
+Architecture: i386
+Depends: gtkwave (>= 3.2.0)
+Description: Parrot ltt host tools
+ .
+ This package includes host tools for doing trace with ltt.
