@@ -581,6 +581,12 @@ static void kernel_timer_update_time_process(struct ltt_module *mod,
     }
 
     if (pass == 2) {
+		static unsigned int old_jiffies;
+		if (old_jiffies && old_jiffies+1 != c_jiffies)
+            DIAG("missing jiffies jump from %x to %x (broken trace ?)\n",
+				   old_jiffies, c_jiffies);
+
+		old_jiffies = c_jiffies;
         emit_trace(&jiffies, (union ltt_value)c_jiffies);
     }
 }
