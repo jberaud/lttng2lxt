@@ -64,7 +64,9 @@ int parse_line(char *line, struct parse_result *res)
 	assert(*line == '{');
 	PARSE(line, '{', values, 0);
 	line = line + strlen(line) - 2;
-	assert(strcmp(line, "}\n") == 0);
+	/* some printk message are on multi line. Ignore them */
+	if (strcmp(line, "}\n") != 0)
+		return -1
 	*line = '\0';
 
 	res->clock = atof(clock);
