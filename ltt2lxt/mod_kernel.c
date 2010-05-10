@@ -572,13 +572,15 @@ static void kernel_timer_update_time_process(struct ltt_module *mod,
                                              struct parse_result *res, int pass)
 {
     unsigned int c_jiffies;
+    unsigned long long c_jiffies64;
 
     kernel_common(res, pass);
-    if (sscanf(res->values, " jiffies = %u",
-               &c_jiffies) != 1) {
+    if (sscanf(res->values, " jiffies = %llu",
+               &c_jiffies64) != 1) {
         PARSE_ERROR(mod, res->values);
         return;
     }
+    c_jiffies = c_jiffies64 & 0xffffffff;
 
     if (pass == 2) {
 		static unsigned int old_jiffies;
