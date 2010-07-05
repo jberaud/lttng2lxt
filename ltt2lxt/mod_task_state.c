@@ -5,11 +5,12 @@
  */
 
 #include "ltt2lxt.h"
-#define PROCESS_STATE "proc.state.[%d] %s"
-#define PROCESS_INFO "proc.sys.[%d] %s (info)"
+#define PROCESS_STATE "proc.state.[%d-%d] %s"
+#define PROCESS_INFO "proc.sys.[%d-%d] %s (info)"
 
 struct tdata {
     int pid;
+    int tgid;
     struct ltt_trace *data;
 };
 
@@ -37,7 +38,7 @@ struct ltt_trace * find_task_trace(int pid)
 	   This should be removed we use alias to track name */
     if (ret == NULL) {
 		struct ltt_trace *r;
-        r =  find_or_add_task_trace(NULL, pid);
+        r =  find_or_add_task_trace(NULL, pid, 0);
 		return r;
     }
 	assert(ret);
@@ -45,7 +46,7 @@ struct ltt_trace * find_task_trace(int pid)
     return ret->data;
 }
 
-struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
+struct ltt_trace * find_or_add_task_trace(const char *name, int pid, int tgid)
 {
     struct tdata tdata, *ret;
 
@@ -54,6 +55,7 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
 
     if (name && strcmp(name, "swapper") == 0) {
         name = "idle thread";
+        tgid = 0;
     }
     if (!ret) {
         struct ltt_trace *data;
@@ -68,19 +70,23 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid)
         ret = malloc(sizeof(struct tdata));
         assert(ret);
         ret->pid = pid;
+        ret->tgid = tgid;
         ret->data = data;
         ret = tsearch(ret, &root, compare);
         assert(ret);
-        init_trace(&data[0], TG_PROCESS, 1.0 + pid, LT_SYM_F_BITS, PROCESS_STATE, pid, name);
-        init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + pid, LT_SYM_F_STRING, PROCESS_INFO, pid, name);
+        init_trace(&data[0], TG_PROCESS, 1.0 + (tgid<<16) + pid, LT_SYM_F_BITS, PROCESS_STATE, tgid, pid, name);
+        init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + (tgid<<16) + pid, LT_SYM_F_STRING, PROCESS_INFO, tgid, pid, name);
         ret = *((void**)ret);
     }
     else if (strcmp(name, "no name") != 0 &&
 			strcmp(name, "kthreadd") != 0 /* XXX */
 			) {
         ret = *((void**)ret);
-        refresh_name(&ret->data[0], PROCESS_STATE, pid, name);
-        refresh_name(&ret->data[1], PROCESS_INFO, pid, name);
+        if (tgid == 0 && ret->tgid != 0) {
+            tgid = ret->tgid;
+        }
+        refresh_name(&ret->data[0], PROCESS_STATE, tgid, pid, name);
+        refresh_name(&ret->data[1], PROCESS_INFO, tgid, pid, name);
     }
     
     return ret->data;
@@ -100,7 +106,7 @@ static void task_state_process_state_process(struct ltt_module *mod,
         return;
     }
 	if (pass == 1) {
-		find_or_add_task_trace(clean_name(s), pid)/*[0].group = 0*/;
+		find_or_add_task_trace(clean_name(s), pid, tgid)/*[0].group = 0*/;
 	}
     if (pass == 2) {
         //XXX

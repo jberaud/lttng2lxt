@@ -162,7 +162,7 @@ static void kernel_common(struct parse_result *res, int pass)
 
     if (pass == 1) {
         init_traces();
-        find_or_add_task_trace(res->pname, res->pid);
+        find_or_add_task_trace(res->pname, res->pid, 0);
     }
     if (pass == 2) {
         if (strcmp(old_mode, res->mode))
@@ -606,11 +606,27 @@ static void kernel_thread_setname_process(struct ltt_module *mod,
         return;
     }
     if (pass == 1) {
-        find_or_add_task_trace(s, id);
+        find_or_add_task_trace(s, id, 0);
     }
     free(s);
 }
 MODULE(kernel, thread_setname);
+
+static void kernel_process_fork_process(struct ltt_module *mod,
+                                         struct parse_result *res, int pass)
+{
+    int ppid, pid, tgid;
+
+    kernel_common(res, pass);
+    if (sscanf(res->values, " parent_pid = %d, child_pid = %d, child_tgid = %d", &ppid, &pid, &tgid) != 3) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+    if (pass == 1) {
+        find_or_add_task_trace(res->pname, pid, tgid);
+    }
+}
+MODULE(kernel, process_fork);
 
 static void kernel_parrot_evt_start_process(struct ltt_module *mod,
                                          struct parse_result *res, int pass)

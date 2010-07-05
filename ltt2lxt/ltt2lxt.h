@@ -176,7 +176,7 @@ static inline char *clean_name(char *name) {
 void emit_trace(struct ltt_trace *tr, union ltt_value value, ...);
 struct ltt_trace *trace_head(void);
 void emit_clock(double clock);
-struct ltt_trace * find_or_add_task_trace(const char *name, int pid);
+struct ltt_trace * find_or_add_task_trace(const char *name, int pid, int tgid);
 struct ltt_trace * find_task_trace(int pid);
 
 void parse_init(void);
