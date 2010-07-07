@@ -58,7 +58,7 @@ static void mm_switch_mm_enter_process(struct ltt_module *mod,
         init_traces();
     }
 	if (pass == 2) {
-		emit_trace(&switchmm_trace, (union ltt_value)LT_IDLE);
+		emit_trace(&switchmm_trace, (union ltt_value)LT_S0);
 	}
 }
 MODULE(mm, switch_mm_enter);
@@ -70,7 +70,7 @@ static void mm_switch_mm_exit_process(struct ltt_module *mod,
         init_traces();
     }
 	if (pass == 2) {
-		emit_trace(&switchmm_trace, (union ltt_value)LT_S0);
+		emit_trace(&switchmm_trace, (union ltt_value)LT_IDLE);
 	}
 }
 MODULE(mm, switch_mm_exit);
