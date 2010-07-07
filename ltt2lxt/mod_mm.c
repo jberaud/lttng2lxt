@@ -7,11 +7,13 @@
 #include "ltt2lxt.h"
 
 static struct ltt_trace trace[2] = {{.sym = NULL}, {.sym = NULL}};
+static struct ltt_trace switchmm_trace;
 
 static void init_traces(void)
 {
     init_trace(&trace[0], TG_MM, 1.0,  LT_SYM_F_BITS, "fault");
     init_trace(&trace[1], TG_MM, 1.01, LT_SYM_F_STRING, "fault (info)");
+    init_trace(&switchmm_trace, TG_MM, 1.02, LT_SYM_F_BITS, "switch");
 }
 
 static void mm_handle_fault_entry_process(struct ltt_module *mod,
@@ -48,3 +50,27 @@ static void mm_handle_fault_exit_process(struct ltt_module *mod,
 	}
 }
 MODULE(mm, handle_fault_exit);
+
+static void mm_switch_mm_enter_process(struct ltt_module *mod,
+                                         struct parse_result *res, int pass)
+{
+    if (pass == 1) {
+        init_traces();
+    }
+	if (pass == 2) {
+		emit_trace(&switchmm_trace, (union ltt_value)LT_IDLE);
+	}
+}
+MODULE(mm, switch_mm_enter);
+
+static void mm_switch_mm_exit_process(struct ltt_module *mod,
+                                         struct parse_result *res, int pass)
+{
+    if (pass == 1) {
+        init_traces();
+    }
+	if (pass == 2) {
+		emit_trace(&switchmm_trace, (union ltt_value)LT_S0);
+	}
+}
+MODULE(mm, switch_mm_exit);
