@@ -15,7 +15,7 @@ static void userspace_event_process(struct ltt_module *mod,
                             struct parse_result *res, int pass)
 {
     char *s;
-    int num = 0;
+    int num = -1;
 
     if (sscanf(res->values, "  string = \"%m[^\"]\"", &s) != 1) {
         PARSE_ERROR(mod, res->values);
@@ -27,14 +27,14 @@ static void userspace_event_process(struct ltt_module *mod,
     }
     if (pass == 1) {
         init_traces();
-        if (num < sizeof(trace)/sizeof(trace[0]) && num > 1)
+        if (num < sizeof(trace)/sizeof(trace[0]) && num >= 0)
             init_trace(&trace[num], TG_PROCESS, 0.1+0.1*num, LT_SYM_F_BITS, "user event %d", num);
     }
 
     if (pass == 2) {
         emit_trace(&trace_g, (union ltt_value)"%d : \"%s\"",
                    res->pid, s);
-        if (num < sizeof(trace)/sizeof(trace[0]) && num > 1) {
+        if (num < sizeof(trace)/sizeof(trace[0]) && num >= 0) {
             if (s[0] == 'S')
                 emit_trace(&trace[num], (union ltt_value)LT_S0);
             else
