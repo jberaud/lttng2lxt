@@ -64,6 +64,13 @@ enum trace_group {
     TG_PROCESS,
 };
 
+union ltt_value {
+    char       *state;
+    uint32_t    data;
+    const char *format;
+    double      dataf;
+};
+
 //! Additional pseudo-trace symbol type
 #define LT_SYM_F_ANALOG        ((1<<29)|LT_SYM_F_DOUBLE)
 #define LT_SYM_F_U16           ((1<<30)|LT_SYM_F_INTEGER)
@@ -77,6 +84,9 @@ struct ltt_trace {
     const char       *name;
     int               emitted;
     struct ltt_trace *next;
+    /* XXX alow to save the task state before cs. should be done
+    in another struct */
+    union ltt_value value;
 };
 
 struct parse_result {
@@ -92,13 +102,6 @@ struct ltt_module {
 	const char     *channel;
 	const char     *name;
 	void          (*process)(struct ltt_module *, struct parse_result *, int);
-};
-
-union ltt_value {
-    char       *state;
-    uint32_t    data;
-    const char *format;
-    double      dataf;
 };
 
 #define __str(_x)       #_x

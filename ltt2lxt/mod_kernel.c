@@ -406,7 +406,9 @@ static void kernel_sched_schedule_process(struct ltt_module *mod,
         /* XXX this is often buggy : some process are in SYCALL mode while running
            in userspace ...
          */
-        if (strcmp(res->mode, "USER_MODE") == 0)
+		if(current_process->value.state)
+        	emit_trace(current_process, current_process->value);
+		else if (strcmp(res->mode, "USER_MODE") == 0)
             emit_trace(current_process, (union ltt_value)PROCESS_USER);
         else
             emit_trace(current_process, (union ltt_value)PROCESS_KERNEL);
@@ -494,6 +496,7 @@ static void kernel_syscall_entry_process(struct ltt_module *mod,
         struct ltt_trace *current_process;
         current_process = find_task_trace(res->pid);
         emit_trace(current_process, (union ltt_value)PROCESS_KERNEL);
+		current_process->value = (union ltt_value)PROCESS_KERNEL;
         if (id < sizeof(syscall_name)/sizeof(syscall_name[0]))
             emit_trace(&current_process[1], (union ltt_value)syscall_name[id]);
         else
@@ -520,6 +523,7 @@ static void kernel_syscall_exit_process(struct ltt_module *mod,
         struct ltt_trace *current_process;
         current_process = find_task_trace(res->pid);
         emit_trace(current_process, (union ltt_value)PROCESS_USER);
+		current_process->value = (union ltt_value)PROCESS_USER;
         /* ret is not valid ... */
         emit_trace(&current_process[1], (union ltt_value)"->%d", ret);
     }
