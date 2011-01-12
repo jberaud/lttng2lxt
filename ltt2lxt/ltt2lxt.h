@@ -55,7 +55,11 @@
 #define LT_1                    "1"
 #define LT_0                    "0"
 
+#if defined(ARCH_OMAP)
+#define MAX_IRQS                (336)
+#else
 #define MAX_IRQS                (64)
+#endif
 
 enum trace_group {
     TG_NONE,

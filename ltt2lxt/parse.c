@@ -69,7 +69,12 @@ int parse_line(char *line, struct parse_result *res)
 		return -1;
 	*line = '\0';
 
+#if defined(ARCH_OMAP)
+	res->clock = atof(clock)*100;
+#else
 	res->clock = atof(clock);
+#endif
+
 	res->pid = atoi(pid);
 	res->pname = clean_name(pname);
 	res->mode = mode;

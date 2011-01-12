@@ -185,14 +185,26 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
                                      struct parse_result *res, int pass)
 {
     int kernel_mode;
-    unsigned int ip, irq;
+    unsigned int ip,irq;
+#if defined(ARCH_OMAP)
+	void *handler;
+#endif
 
     kernel_common(res, pass);
-    if (sscanf(res->values, " ip = %u, irq_id = %u, kernel_mode = %d",
-               &ip, &irq, &kernel_mode) != 3) {
+#if defined(ARCH_OMAP)
+    if (sscanf(res->values, " ip = %u, handler = %p, irq_id = %u, kernel_mode = %d",
+               &ip, &handler, &irq, &kernel_mode) != 4) {
         PARSE_ERROR(mod, res->values);
         return;
     }
+#else
+	if (sscanf(res->values, " ip = %u, irq_id = %u, kernel_mode = %d",
+               &ip, &irq, &kernel_mode) != 4) {
+        PARSE_ERROR(mod, res->values);
+        return;
+    }
+#endif
+
     if (irq >= MAX_IRQS) {
         DIAG("invalid IRQ vector ? (%d)\n", irq);
         return;
@@ -284,7 +296,7 @@ static void kernel_softirq_entry_process(struct ltt_module *mod,
     if (pass == 2) {
         emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_RUNNING);
         emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_PREEMPT);
-        if (id < sizeof(sofirq_tag) && sofirq_tag[id])
+        if (id < sizeof(sofirq_tag)/sizeof(char *) && sofirq_tag[id])
             emit_trace(&sirq[1], (union ltt_value)sofirq_tag[id]);
         else
             emit_trace(&sirq[1], (union ltt_value)"softirq %d", id);
@@ -337,7 +349,7 @@ static void kernel_softirq_raise_process(struct ltt_module *mod,
     if (pass == 2) {
         if (softirqstate == SOFTIRQS_IDLE)
             emit_trace(&sirq[0], (union ltt_value)SOFTIRQ_RAISING);
-        if (id < sizeof(sofirq_tag) && sofirq_tag[id])
+        if (id < sizeof(sofirq_tag)/sizeof(char *) && sofirq_tag[id])
             emit_trace(&sirq[1], (union ltt_value)"! %s", sofirq_tag[id]);
         else
             emit_trace(&sirq[1], (union ltt_value)"raise %d", id);
@@ -589,8 +601,9 @@ static void kernel_timer_update_time_process(struct ltt_module *mod,
     if (pass == 2) {
 		static unsigned int old_jiffies;
 		if (old_jiffies && old_jiffies+1 != c_jiffies)
-            DIAG("missing jiffies jump from %x to %x (broken trace ?)\n",
-				   old_jiffies, c_jiffies);
+            /* missing jiffies is not an error depending on the kernel config
+			DIAG("missing jiffies jump from %x to %x (broken trace ?)\n",
+				   old_jiffies, c_jiffies);*/
 
 		old_jiffies = c_jiffies;
         emit_trace(&jiffies, (union ltt_value)c_jiffies);
