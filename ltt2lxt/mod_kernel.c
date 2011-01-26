@@ -199,7 +199,7 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
     }
 #else
 	if (sscanf(res->values, " ip = %u, irq_id = %u, kernel_mode = %d",
-               &ip, &irq, &kernel_mode) != 4) {
+               &ip, &irq, &kernel_mode) != 3) {
         PARSE_ERROR(mod, res->values);
         return;
     }
