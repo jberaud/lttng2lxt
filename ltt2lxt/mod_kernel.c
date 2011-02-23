@@ -210,11 +210,16 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
         return;
     }
 
-    if (pass == 1) {
+    if (pass == 1 && irq_tag[irq]) {
         init_trace(&trace[irq], TG_IRQ, 1.0+irq, LT_SYM_F_BITS, irq_tag[irq]);
         atag_store(ip);
     }
     if (pass == 2) {
+        if (!irq_tag[irq]) {
+            char name[20];
+            snprintf(name, sizeof(name), "irq %d", irq);
+            init_trace(&trace[irq], TG_IRQ, 1.0+irq, LT_SYM_F_BITS, strdup(name));
+        }
         if (irqlevel >= MAX_IRQS) {
             DIAG("IRQ nesting level is too high (%d)\n", irqlevel);
             return;
@@ -236,6 +241,7 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
         if (irqlevel == 1)
             emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_PREEMPT);
         /* stat stuff */
+#ifndef ARCH_OMAP
         if (irq == 19) {
             if (timer3clock > 0) {
                 double diff = res->clock - timer3clock;
@@ -251,6 +257,7 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
 
             timer3clock = res->clock;
         }
+#endif
         /* only account on the first irq */
         if (irqlevel == 1)
             irqtime = res->clock;

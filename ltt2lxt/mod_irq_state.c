@@ -8,6 +8,7 @@
 
 //XXX default to P6 irq vectors
 char *irq_tag[MAX_IRQS] = {
+#ifndef ARCH_OMAP
     "LCDC",
     "CAN",
     "AAI",
@@ -41,6 +42,8 @@ char *irq_tag[MAX_IRQS] = {
     "USB1",
     "MMCIX",
     [32 ... MAX_IRQS-1] = "gpio",
+#else
+#endif
 };
 
 static void irq_state_interrupt_process(struct ltt_module *mod,
@@ -58,10 +61,12 @@ static void irq_state_interrupt_process(struct ltt_module *mod,
         }
 		/* XXX we can leak memory here */
         if (irq < MAX_IRQS) {
-            if (strcmp(irq_tag[irq], s2)) {
-				INFO("%s -> %s\n", irq_tag[irq], s2);
-                irq_tag[irq] = strdup(s2);
-			}
+            if (!irq_tag[irq] || strcmp(irq_tag[irq], s2)) {
+                char name[40];
+                INFO("%s -> %s\n", irq_tag[irq], s2);
+                snprintf(name, sizeof(name), "%s (%d)", s2, irq);
+                irq_tag[irq] = strdup(name);
+            }
         }
         free(s1);
         free(s2);
