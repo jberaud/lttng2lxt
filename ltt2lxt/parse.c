@@ -69,7 +69,8 @@ int parse_line(char *line, struct parse_result *res)
 		return -1;
 	*line = '\0';
 
-#if defined(ARCH_OMAP)
+#if 0
+//#if defined(ARCH_OMAP)
 	res->clock = atof(clock)*100;
 #else
 	res->clock = atof(clock);
