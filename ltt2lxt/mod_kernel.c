@@ -186,12 +186,12 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
 {
     int kernel_mode;
     unsigned int ip,irq;
-#if defined(ARCH_OMAP)
+#if defined(ARCH_2_6_3X)
 	void *handler;
 #endif
 
     kernel_common(res, pass);
-#if defined(ARCH_OMAP)
+#if defined(ARCH_2_6_3X)
     if (sscanf(res->values, " ip = %u, handler = %p, irq_id = %u, kernel_mode = %d",
                &ip, &handler, &irq, &kernel_mode) != 4) {
         PARSE_ERROR(mod, res->values);
@@ -241,7 +241,7 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
         if (irqlevel == 1)
             emit_cpu_idle_state(res, (union ltt_value)IDLE_CPU_PREEMPT);
         /* stat stuff */
-#ifndef ARCH_OMAP
+#ifndef ARCH_2_6_3X
         if (irq == 19) {
             if (timer3clock > 0) {
                 double diff = res->clock - timer3clock;

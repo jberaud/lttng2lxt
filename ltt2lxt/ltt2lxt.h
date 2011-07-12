@@ -55,7 +55,7 @@
 #define LT_1                    "1"
 #define LT_0                    "0"
 
-#if defined(ARCH_OMAP)
+#if defined(ARCH_2_6_3X)
 #define MAX_IRQS                (336)
 #else
 #define MAX_IRQS                (64)

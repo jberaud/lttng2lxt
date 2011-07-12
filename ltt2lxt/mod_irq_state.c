@@ -8,7 +8,7 @@
 
 //XXX default to P6 irq vectors
 char *irq_tag[MAX_IRQS] = {
-#ifndef ARCH_OMAP
+#ifndef ARCH_2_6_3X
     "LCDC",
     "CAN",
     "AAI",
