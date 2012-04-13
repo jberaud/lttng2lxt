@@ -73,8 +73,6 @@ static int softirqstate;
 static double softirqtime;
 static char softirqtask[30];
 static double irqtime;
-static double timer3clock;
-static double timer3diff;
 enum {
     IDLE_IDLE,
     IDLE_RUNNING,
@@ -243,6 +241,8 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
         /* stat stuff */
 #ifndef ARCH_2_6_3X
         if (irq == 19) {
+			static double timer3clock;
+			static double timer3diff;
             if (timer3clock > 0) {
                 double diff = res->clock - timer3clock;
                 if (timer3diff > 0) {
