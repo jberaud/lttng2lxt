@@ -607,9 +607,28 @@ static void kernel_timer_update_time_process(struct ltt_module *mod,
 
     if (pass == 2) {
 		static unsigned int old_jiffies;
+		static double jiffies_clock;
+		static double jiffies_diff;
+
 		if (old_jiffies && old_jiffies+1 != c_jiffies)
 			TDIAG(res, "missing jiffies jump from %x to %x (broken trace ?)\n",
 				   old_jiffies, c_jiffies);
+		if (jiffies_clock > 0) {
+			double diff = res->clock - jiffies_clock;
+			if (jiffies_diff > 0) {
+				/* we allow a jitter of 0,1 ms */
+				if (diff > jiffies_diff + 0.0001 ||
+						diff < jiffies_diff - 0.0001) {
+					TDIAG(res, "unstable jiffies for %x took %fs (instead of %fs)\n", old_jiffies, diff, jiffies_diff);
+				}
+			}
+			else {
+				jiffies_diff = diff;
+				TDIAG(res, "set jiffies times to %fs\n", jiffies_diff);
+			}
+
+		}
+		jiffies_clock = res->clock;
 
 		old_jiffies = c_jiffies;
         emit_trace(&jiffies, (union ltt_value)c_jiffies);
