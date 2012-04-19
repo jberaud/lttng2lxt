@@ -15,17 +15,19 @@ OBJS	= lxt_write.o ltt2lxt.o atag.o parse.o symbol.o modules.o savefile.o \
 
 all: $(PROGRAM_2_6_2X) $(PROGRAM_2_6_3X)
 
-2_6_2X/%.o : %.c $(HEADERS) 2_6_2X
+2_6_2X/%.o : %.c $(HEADERS) 2_6_2X/.dir
 	$(CC) $(CFLAGS) -c $< -o $@
 
-2_6_3X/%.o : %.c $(HEADERS) 2_6_3X
+2_6_3X/%.o : %.c $(HEADERS) 2_6_3X/.dir
 	$(CC) $(CFLAGS) -DARCH_2_6_3X -c $< -o $@
 
-2_6_3X:
-	mkdir -p $@
+2_6_3X/.dir:
+	mkdir -p $(dir $@)
+	touch $@
 
-2_6_2X: 
-	mkdir -p $@
+2_6_2X/.dir:
+	mkdir -p $(dir $@)
+	touch $@
 
 $(PROGRAM_2_6_2X): $(addprefix 2_6_2X/,$(OBJS))
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) -Wl,--sort-section,name
