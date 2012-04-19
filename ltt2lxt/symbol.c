@@ -22,9 +22,13 @@
 
 #include "ltt2lxt.h"
 
+static struct lt_trace *lt = NULL;
+
 static struct ltt_trace *head = NULL;
 
 static int symbol_flushed;
+
+static const char *lxt_name;
 
 static void insert_symbol(struct ltt_trace *tr)
 {
@@ -167,4 +171,23 @@ void emit_clock(double clock)
 
     oldtimeval = timeval;
     lt_set_time64(lt, timeval);
+}
+
+void save_dump_init(const char *lxtfile)
+{
+    lt = lt_init(lxtfile);
+    assert(lt);
+
+	lxt_name = lxtfile;
+
+    // set time resolution
+    lt_set_timescale(lt, -9);
+    lt_set_initial_value(lt, 'z');
+}
+
+void save_dump_close(void)
+{
+
+    INFO("writing LXT file '%s'...\n", lxt_name);
+    lt_close(lt);
 }

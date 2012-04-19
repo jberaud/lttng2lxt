@@ -43,6 +43,10 @@
 #include <search.h>
 
 #include "lxt_write.h"
+//! Additional pseudo-trace symbol type
+#define LT_SYM_F_ANALOG        ((1<<29)|LT_SYM_F_DOUBLE)
+#define LT_SYM_F_U16           ((1<<30)|LT_SYM_F_INTEGER)
+#define LT_SYM_F_ADDR          (1<<31)
 
 #define PFX "ltt2lxt: "
 
@@ -74,11 +78,6 @@ union ltt_value {
     const char *format;
     double      dataf;
 };
-
-//! Additional pseudo-trace symbol type
-#define LT_SYM_F_ANALOG        ((1<<29)|LT_SYM_F_DOUBLE)
-#define LT_SYM_F_U16           ((1<<30)|LT_SYM_F_INTEGER)
-#define LT_SYM_F_ADDR          (1<<31)
 
 struct ltt_trace {
     struct lt_symbol *sym;
@@ -150,7 +149,6 @@ struct ltt_module {
 	DIAG("%s.%s: unable to parse values '%s'\n",						\
 		 (_mod_)->channel, (_mod_)->name, _val_)
 
-extern struct lt_trace *lt;
 extern int verbose;
 extern int diag;
 extern int gtkwave_parrot;
@@ -183,6 +181,9 @@ static inline char *clean_name(char *name) {
 void emit_trace(struct ltt_trace *tr, union ltt_value value, ...);
 struct ltt_trace *trace_head(void);
 void emit_clock(double clock);
+void save_dump_init(const char *name);
+void save_dump_close(void);
+
 struct ltt_trace * find_or_add_task_trace(const char *name, int pid, int tgid);
 struct ltt_trace * find_task_trace(int pid);
 

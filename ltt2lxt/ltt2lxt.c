@@ -31,7 +31,6 @@
 int verbose = 0;
 int diag = 0;
 int gtkwave_parrot = 0;
-struct lt_trace *lt = NULL;
 
 static void scan_lttdump(const char *name)
 {
@@ -145,20 +144,14 @@ int main(int argc, char *argv[])
 
     modules_init();
     parse_init();
-    lt = lt_init(lxtfile);
-    assert(lt);
-
-    // set time resolution
-    lt_set_timescale(lt, -9);
-    lt_set_initial_value(lt, 'z');
+    save_dump_init(lxtfile);
 
     scan_lttdump(dumpfile);
 
     // create a savefile for GTKwave with comments, trace ordering, etc.
     write_savefile(savefile);
 
-    INFO("writing LXT file '%s'...\n", lxtfile);
-    lt_close(lt);
+    save_dump_close();
 
     if (optind != argc-3) {
         free(lxtfile);
