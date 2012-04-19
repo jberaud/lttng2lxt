@@ -95,21 +95,21 @@ static struct ltt_trace cpu_load;
 
 static void init_traces(void)
 {
-    init_trace(&irq_pc, TG_IRQ, 0.0, LT_SYM_F_ADDR, "IRQ (pc)");
-    init_trace(&sirq[0], TG_IRQ, 100.0, LT_SYM_F_BITS, "softirq");
-    init_trace(&sirq[1], TG_IRQ, 100.01, LT_SYM_F_STRING, "softirq (info)");
-    init_trace(&sirq[2], TG_IRQ, 100.02, LT_SYM_F_STRING, "softirq (info2)");
-    init_trace(&tlow[0], TG_IRQ, 101.0, LT_SYM_F_BITS, "tasklet_low");
-    init_trace(&tlow[1], TG_IRQ, 101.01, LT_SYM_F_ADDR, "tasklet_low (info)");
-    init_trace(&syscall_id, TG_PROCESS, 0.0, LT_SYM_F_U16, "SYSCALL");
-    init_trace(&syscall_pc, TG_PROCESS, 0.0, LT_SYM_F_ADDR, "SYSCALL (pc)");
-    init_trace(&sched_event, TG_PROCESS, 0.0, LT_SYM_F_STRING, "Sched event");
-    init_trace(&mode, TG_PROCESS, 0.0, LT_SYM_F_STRING, "MODE");
-    init_trace(&printk_pc, TG_PROCESS, 0.0, LT_SYM_F_ADDR, "printk (pc)");
-    init_trace(&jiffies, TG_IRQ, 0.0, LT_SYM_F_INTEGER, "jiffies");
-    init_trace(&parrot_evt, TG_PROCESS, 0.0, LT_SYM_F_STRING, "kernel event");
-    init_trace(&idle_cpu, TG_PROCESS, 0.0, LT_SYM_F_BITS, "global idle");
-    init_trace(&cpu_load, TG_IRQ, 0.0, LT_SYM_F_ANALOG, "cpu load");
+    init_trace(&irq_pc, TG_IRQ, 0.0, TRACE_SYM_F_ADDR, "IRQ (pc)");
+    init_trace(&sirq[0], TG_IRQ, 100.0, TRACE_SYM_F_BITS, "softirq");
+    init_trace(&sirq[1], TG_IRQ, 100.01, TRACE_SYM_F_STRING, "softirq (info)");
+    init_trace(&sirq[2], TG_IRQ, 100.02, TRACE_SYM_F_STRING, "softirq (info2)");
+    init_trace(&tlow[0], TG_IRQ, 101.0, TRACE_SYM_F_BITS, "tasklet_low");
+    init_trace(&tlow[1], TG_IRQ, 101.01, TRACE_SYM_F_ADDR, "tasklet_low (info)");
+    init_trace(&syscall_id, TG_PROCESS, 0.0, TRACE_SYM_F_U16, "SYSCALL");
+    init_trace(&syscall_pc, TG_PROCESS, 0.0, TRACE_SYM_F_ADDR, "SYSCALL (pc)");
+    init_trace(&sched_event, TG_PROCESS, 0.0, TRACE_SYM_F_STRING, "Sched event");
+    init_trace(&mode, TG_PROCESS, 0.0, TRACE_SYM_F_STRING, "MODE");
+    init_trace(&printk_pc, TG_PROCESS, 0.0, TRACE_SYM_F_ADDR, "printk (pc)");
+    init_trace(&jiffies, TG_IRQ, 0.0, TRACE_SYM_F_INTEGER, "jiffies");
+    init_trace(&parrot_evt, TG_PROCESS, 0.0, TRACE_SYM_F_STRING, "kernel event");
+    init_trace(&idle_cpu, TG_PROCESS, 0.0, TRACE_SYM_F_BITS, "global idle");
+    init_trace(&cpu_load, TG_IRQ, 0.0, TRACE_SYM_F_ANALOG, "cpu load");
 }
 
 static double emit_cpu_idle_state(struct parse_result *res, union ltt_value val)
@@ -209,14 +209,14 @@ static void kernel_irq_entry_process(struct ltt_module *mod,
     }
 
     if (pass == 1 && irq_tag[irq]) {
-        init_trace(&trace[irq], TG_IRQ, 1.0+irq, LT_SYM_F_BITS, irq_tag[irq]);
+        init_trace(&trace[irq], TG_IRQ, 1.0+irq, TRACE_SYM_F_BITS, irq_tag[irq]);
         atag_store(ip);
     }
     if (pass == 2) {
         if (!irq_tag[irq]) {
             char name[20];
             snprintf(name, sizeof(name), "irq %d", irq);
-            init_trace(&trace[irq], TG_IRQ, 1.0+irq, LT_SYM_F_BITS, strdup(name));
+            init_trace(&trace[irq], TG_IRQ, 1.0+irq, TRACE_SYM_F_BITS, strdup(name));
         }
         if (irqlevel >= MAX_IRQS) {
             DIAG("IRQ nesting level is too high (%d)\n", irqlevel);

@@ -74,8 +74,8 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid, int tgid)
         ret->data = data;
         ret = tsearch(ret, &root, compare);
         assert(ret);
-        init_trace(&data[0], TG_PROCESS, 1.0 + (tgid<<16) + pid, LT_SYM_F_BITS, PROCESS_STATE, tgid, pid, name);
-        init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + (tgid<<16) + pid, LT_SYM_F_STRING, PROCESS_INFO, tgid, pid, name);
+        init_trace(&data[0], TG_PROCESS, 1.0 + (tgid<<16) + pid, TRACE_SYM_F_BITS, PROCESS_STATE, tgid, pid, name);
+        init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + (tgid<<16) + pid, TRACE_SYM_F_STRING, PROCESS_INFO, tgid, pid, name);
         ret = *((void**)ret);
     }
     else if (strcmp(name, "no name") != 0 &&

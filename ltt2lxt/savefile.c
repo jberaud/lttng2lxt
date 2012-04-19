@@ -70,16 +70,16 @@ static void print_group(enum trace_group group, const char *name, FILE *fp,
 
         for (i = 0; i < tablen; i++) {
             flag = 0;
-            flag |= (tab[i]->sym->flags & LT_SYM_F_BITS)?    TR_BIN : 0;
-            flag |= (tab[i]->sym->flags & LT_SYM_F_INTEGER)? TR_HEX : 0;
-            flag |= (tab[i]->sym->flags & LT_SYM_F_STRING)?  TR_ASCII : 0;
+            flag |= (tab[i]->flags & TRACE_SYM_F_BITS)?    TR_BIN : 0;
+            flag |= (tab[i]->flags & TRACE_SYM_F_INTEGER)? TR_HEX : 0;
+            flag |= (tab[i]->flags & TRACE_SYM_F_STRING)?  TR_ASCII : 0;
 
             /* overides */
-            if (tab[i]->flags == LT_SYM_F_ANALOG)
+            if (tab[i]->flags == TRACE_SYM_F_ANALOG)
                 flag = TR_ANALOG_INTERPOLATED|TR_DEC|TR_ANALOG_FULLSCALE;
 
-            fprintf(fp, "@%x\n%s%s\n", flag|TR_RJUSTIFY, tab[i]->sym->name,
-                    (tab[i]->flags == LT_SYM_F_U16)? "[0:15]":"");
+            fprintf(fp, "@%x\n%s%s\n", flag|TR_RJUSTIFY, tab[i]->name,
+                    (tab[i]->flags == TRACE_SYM_F_U16)? "[0:15]":"");
         }
     }
 }

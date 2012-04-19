@@ -11,9 +11,9 @@ static struct ltt_trace switchmm_trace;
 
 static void init_traces(void)
 {
-    init_trace(&trace[0], TG_MM, 1.0,  LT_SYM_F_BITS, "fault");
-    init_trace(&trace[1], TG_MM, 1.01, LT_SYM_F_STRING, "fault (info)");
-    init_trace(&switchmm_trace, TG_MM, 1.02, LT_SYM_F_BITS, "switch");
+    init_trace(&trace[0], TG_MM, 1.0,  TRACE_SYM_F_BITS, "fault");
+    init_trace(&trace[1], TG_MM, 1.01, TRACE_SYM_F_STRING, "fault (info)");
+    init_trace(&switchmm_trace, TG_MM, 1.02, TRACE_SYM_F_BITS, "switch");
 }
 
 static void mm_handle_fault_entry_process(struct ltt_module *mod,

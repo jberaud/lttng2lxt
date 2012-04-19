@@ -22,6 +22,8 @@
 
 #include "ltt2lxt.h"
 
+#include "lxt_write.h"
+
 static struct lt_trace *lt = NULL;
 
 static struct ltt_trace *head = NULL;
@@ -34,16 +36,33 @@ static void insert_symbol(struct ltt_trace *tr)
 {
     tr->sym = lt_symbol_find(lt, tr->name);
     if (!tr->sym) {
-        uint32_t flags = tr->flags;
-        if (tr->flags == LT_SYM_F_ADDR) {
-            flags = (atag_enabled)? LT_SYM_F_STRING : LT_SYM_F_INTEGER;
-        }
-        if (tr->flags == LT_SYM_F_U16) {
-            tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 15, flags & 0xff);
-        }
-        else {
-            tr->sym = lt_symbol_add(lt, tr->name, 0, 0, 0, flags & 0xff);
-        }
+        uint32_t flags;
+		int bits = 0;
+        if (tr->flags == TRACE_SYM_F_ADDR && !atag_enabled)
+				tr->flags = TRACE_SYM_F_INTEGER;
+
+		switch (tr->flags) {
+			case TRACE_SYM_F_BITS:
+				flags = LT_SYM_F_BITS;
+				break;
+			case TRACE_SYM_F_U16:
+				bits = 15;
+			case TRACE_SYM_F_INTEGER:
+				flags = LT_SYM_F_INTEGER;
+				break;
+			case TRACE_SYM_F_STRING:
+				flags = LT_SYM_F_STRING;
+				break;
+			case TRACE_SYM_F_ANALOG:
+				flags = LT_SYM_F_DOUBLE;
+				break;
+			case TRACE_SYM_F_ADDR:
+				flags = LT_SYM_F_STRING;
+				break;
+			default:
+				assert(0);
+		}
+        tr->sym = lt_symbol_add(lt, tr->name, 0, 0, bits, flags);
         assert(tr->sym);
     }
 }
@@ -117,34 +136,29 @@ void emit_trace(struct ltt_trace *tr, union ltt_value value, ...)
     tr->emitted = 1;
     switch (tr->flags) {
 
-    case LT_SYM_F_BITS:
+    case TRACE_SYM_F_BITS:
         lt_emit_value_bit_string(lt, tr->sym, 0, value.state);
         break;
 
-    case LT_SYM_F_U16:
+    case TRACE_SYM_F_U16:
         assert(value.data <= 0xffff);
-    case LT_SYM_F_INTEGER:
+    case TRACE_SYM_F_INTEGER:
         lt_emit_value_int(lt, tr->sym, 0, value.data);
         break;
 
-    case LT_SYM_F_ANALOG:
+    case TRACE_SYM_F_ANALOG:
         lt_emit_value_double(lt, tr->sym, 0, value.dataf);
         break;
 
-    case LT_SYM_F_STRING:
+    case TRACE_SYM_F_STRING:
         va_start(ap, value);
         vsnprintf(linebuf, LINEBUF_MAX, value.format, ap);
         va_end(ap);
         lt_emit_value_string(lt, tr->sym, 0, linebuf);
         break;
 
-    case LT_SYM_F_ADDR:
-        if (tr->sym->flags == LT_SYM_F_STRING) {
-            lt_emit_value_string(lt, tr->sym, 0, atag_get(value.data));
-        }
-        else {
-            lt_emit_value_int(lt, tr->sym, 0, value.data);
-        }
+    case TRACE_SYM_F_ADDR:
+        lt_emit_value_string(lt, tr->sym, 0, atag_get(value.data));
         break;
     default:
         assert(0);

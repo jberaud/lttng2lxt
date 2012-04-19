@@ -42,11 +42,16 @@
 #include <getopt.h>
 #include <search.h>
 
-#include "lxt_write.h"
+enum {
+    TRACE_SYM_F_BITS,
+    TRACE_SYM_F_INTEGER,
+    TRACE_SYM_F_STRING,
+    TRACE_SYM_F_DOUBLE,
+};
 //! Additional pseudo-trace symbol type
-#define LT_SYM_F_ANALOG        ((1<<29)|LT_SYM_F_DOUBLE)
-#define LT_SYM_F_U16           ((1<<30)|LT_SYM_F_INTEGER)
-#define LT_SYM_F_ADDR          (1<<31)
+#define TRACE_SYM_F_ANALOG        ((1<<29)|TRACE_SYM_F_DOUBLE)
+#define TRACE_SYM_F_U16           ((1<<30)|TRACE_SYM_F_INTEGER)
+#define TRACE_SYM_F_ADDR          (1<<31)
 
 #define PFX "ltt2lxt: "
 
@@ -80,7 +85,7 @@ union ltt_value {
 };
 
 struct ltt_trace {
-    struct lt_symbol *sym;
+    void             *sym;
     uint32_t          flags;
     enum trace_group  group;
     double            pos;

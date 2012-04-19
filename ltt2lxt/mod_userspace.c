@@ -8,7 +8,7 @@ static struct ltt_trace trace[32];
 
 static void init_traces(void)
 {
-    init_trace(&trace_g, TG_PROCESS, 0.1, LT_SYM_F_STRING, "user event");
+    init_trace(&trace_g, TG_PROCESS, 0.1, TRACE_SYM_F_STRING, "user event");
 }
 
 static void userspace_event_process(struct ltt_module *mod,
@@ -28,7 +28,7 @@ static void userspace_event_process(struct ltt_module *mod,
     if (pass == 1) {
         init_traces();
         if (num < sizeof(trace)/sizeof(trace[0]) && num >= 0)
-            init_trace(&trace[num], TG_PROCESS, 0.1+0.1*num, LT_SYM_F_BITS, "user event %d", num);
+            init_trace(&trace[num], TG_PROCESS, 0.1+0.1*num, TRACE_SYM_F_BITS, "user event %d", num);
     }
 
     if (pass == 2) {
