@@ -76,6 +76,7 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid, int tgid)
         assert(ret);
         init_trace(&data[0], TG_PROCESS, 1.0 + (tgid<<16) + pid, TRACE_SYM_F_BITS, PROCESS_STATE, tgid, pid, name);
         init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + (tgid<<16) + pid, TRACE_SYM_F_STRING, PROCESS_INFO, tgid, pid, name);
+		data[0].value.state = NULL;
         ret = *((void**)ret);
     }
     else if (strcmp(name, "no name") != 0 &&
@@ -85,6 +86,7 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid, int tgid)
         if (tgid == 0 && ret->tgid != 0) {
             tgid = ret->tgid;
         }
+		ret->tgid = tgid;
         refresh_name(&ret->data[0], PROCESS_STATE, tgid, pid, name);
         refresh_name(&ret->data[1], PROCESS_INFO, tgid, pid, name);
     }
