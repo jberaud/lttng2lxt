@@ -78,5 +78,8 @@ struct ltt_module *find_module_by_name(const char *channel, const char *name)
 	if (ret) {
 		return ret->data;
 	}
+	if (strcmp(channel, "kernel") == 0) {
+		INFO("no support for %s.%s\n", channel, name);
+	}
     return NULL;
 }
