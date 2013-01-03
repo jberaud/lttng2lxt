@@ -92,6 +92,7 @@ static struct ltt_trace jiffies;
 static struct ltt_trace parrot_evt;
 static struct ltt_trace idle_cpu;
 static struct ltt_trace cpu_load;
+static struct ltt_trace trace_fault[4] = {{.sym = NULL}, {.sym = NULL}};
 
 static void init_traces(void)
 {
@@ -110,6 +111,11 @@ static void init_traces(void)
     init_trace(&parrot_evt, TG_PROCESS, 0.0, TRACE_SYM_F_STRING, "kernel event");
     init_trace(&idle_cpu, TG_PROCESS, 0.0, TRACE_SYM_F_BITS, "global idle");
     init_trace(&cpu_load, TG_IRQ, 0.0, TRACE_SYM_F_ANALOG, "cpu load");
+
+    init_trace(&trace_fault[0], TG_MM, 1.00, TRACE_SYM_F_BITS, "fault");
+    init_trace(&trace_fault[1], TG_MM, 1.01, TRACE_SYM_F_STRING, "fault (info)");
+    init_trace(&trace_fault[2], TG_MM, 1.02, TRACE_SYM_F_BITS, "get user fault");
+    init_trace(&trace_fault[3], TG_MM, 1.03, TRACE_SYM_F_STRING, "get user fault (info)");
 }
 
 static double emit_cpu_idle_state(struct parse_result *res, union ltt_value val)
@@ -701,3 +707,84 @@ static void kernel_parrot_evt_stop_process(struct ltt_module *mod,
     }
 }
 MODULE(kernel, parrot_evt_stop);
+
+static void kernel_page_fault_entry_process(struct ltt_module *mod,
+                                          struct parse_result *res, int pass)
+{
+       int wr;
+       unsigned long ip;
+       unsigned long address;
+
+    if (pass == 1) {
+        init_traces();
+    }
+       if (sscanf(res->values, " ip = %lx, address = %lx, trap_id = 14, write_access = %d",
+                          &ip, &address, &wr) != 3) {
+               PARSE_ERROR(mod, res->values);
+               return;
+       }
+       if (pass == 2) {
+               emit_trace(&trace_fault[0], (union ltt_value)(wr?LT_S2:LT_S0));
+               emit_trace(&trace_fault[1], (union ltt_value)"0x%08x@%c0x%08x",
+                   ip, (wr)? 'W' : 'R', (uint32_t)address);
+       }
+}
+MODULE(kernel, page_fault_entry);
+
+static void kernel_page_fault_exit_process(struct ltt_module *mod,
+                                         struct parse_result *res, int pass)
+{
+	int fault;
+    if (pass == 1) {
+        init_traces();
+    }
+       if (sscanf(res->values, " res = %d",
+                          &fault) != 1) {
+               PARSE_ERROR(mod, res->values);
+               return;
+       }
+
+       if (pass == 2) {
+               emit_trace(&trace_fault[0], (union ltt_value)LT_IDLE);
+               emit_trace(&trace_fault[1], (union ltt_value)"-> %d",
+                   fault);
+
+       }
+}
+MODULE(kernel, page_fault_exit);
+
+static void kernel_page_fault_get_user_entry_process(struct ltt_module *mod,
+                                          struct parse_result *res, int pass)
+{
+       int wr;
+       unsigned long long address;
+
+    if (pass == 1) {
+        init_traces();
+    }
+       if (sscanf(res->values, " address = %llx, write_access = %d",
+                          &address, &wr) != 2) {
+               PARSE_ERROR(mod, res->values);
+               return;
+       }
+       if (pass == 2) {
+               emit_trace(&trace_fault[2], (union ltt_value)(wr?LT_S2:LT_S0));
+               emit_trace(&trace_fault[3], (union ltt_value)"%c@0x%08x",
+                   (wr)? 'W' : 'R', (uint32_t)address);
+       }
+}
+MODULE(kernel, page_fault_get_user_entry);
+
+static void kernel_page_fault_get_user_exit_process(struct ltt_module *mod,
+                                         struct parse_result *res, int pass)
+{
+    if (pass == 1) {
+        init_traces();
+    }
+       if (pass == 2) {
+               emit_trace(&trace_fault[2], (union ltt_value)LT_IDLE);
+       }
+}
+MODULE(kernel, page_fault_get_user_exit);
+
+
