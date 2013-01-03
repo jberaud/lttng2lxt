@@ -27,6 +27,7 @@
  */
 
 #include "ltt2lxt.h"
+#include <unistd.h>
 
 int verbose = 0;
 int diag = 0;
@@ -134,7 +135,7 @@ int main(int argc, char *argv[])
     else {
         /* make new names with proper extensions */
         lxtfile = (char *)malloc(strlen(dumpfile)+5);
-        savefile = (char *)malloc(strlen(dumpfile)+5);
+        savefile = (char *)malloc(strlen(dumpfile)+6);
         assert(lxtfile && savefile);
         strcpy(lxtfile, dumpfile);
         strcat(lxtfile, ".lxt");
@@ -150,6 +151,11 @@ int main(int argc, char *argv[])
 
     // create a savefile for GTKwave with comments, trace ordering, etc.
     write_savefile(savefile);
+    strcpy(lxtfile, savefile);
+    strcpy(savefile, dumpfile);
+    strcat(savefile, ".gtkw");
+    unlink(savefile);
+    link(lxtfile, savefile);
 
     save_dump_close();
 
