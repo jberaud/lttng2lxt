@@ -90,6 +90,7 @@ static struct ltt_trace mode;
 static struct ltt_trace printk_pc;
 static struct ltt_trace jiffies;
 static struct ltt_trace parrot_evt;
+static struct ltt_trace parrot_evt_n[32];
 static struct ltt_trace idle_cpu;
 static struct ltt_trace cpu_load;
 static struct ltt_trace trace_fault[4] = {{.sym = NULL}, {.sym = NULL}};
@@ -686,8 +687,16 @@ static void kernel_parrot_evt_start_process(struct ltt_module *mod,
         PARSE_ERROR(mod, res->values);
         return;
     }
+	if (pass == 1) {
+        init_traces();
+        if (id < sizeof(parrot_evt_n)/sizeof(parrot_evt_n[0]) && id >= 0)
+            init_trace(&parrot_evt_n[id], TG_PROCESS, 0.0+0.1*id, TRACE_SYM_F_BITS, "kernel event %d", id);
+    }
+
     if (pass == 2) {
         emit_trace(&parrot_evt, (union ltt_value)"<-%d", id);
+        if (id < sizeof(parrot_evt_n)/sizeof(parrot_evt_n[0]) && id >= 0)
+                emit_trace(&parrot_evt_n[id], (union ltt_value)LT_S0);
     }
 }
 MODULE(kernel, parrot_evt_start);
@@ -702,8 +711,16 @@ static void kernel_parrot_evt_stop_process(struct ltt_module *mod,
         PARSE_ERROR(mod, res->values);
         return;
     }
+	if (pass == 1) {
+        init_traces();
+        if (id < sizeof(parrot_evt_n)/sizeof(parrot_evt_n[0]) && id >= 0)
+            init_trace(&parrot_evt_n[id], TG_PROCESS, 0.0+0.1*id, TRACE_SYM_F_BITS, "kernel event %d", id);
+    }
+
     if (pass == 2) {
         emit_trace(&parrot_evt, (union ltt_value)"%d->", id);
+        if (id < sizeof(parrot_evt_n)/sizeof(parrot_evt_n[0]) && id >= 0)
+                emit_trace(&parrot_evt_n[id], (union ltt_value)LT_IDLE);
     }
 }
 MODULE(kernel, parrot_evt_stop);
