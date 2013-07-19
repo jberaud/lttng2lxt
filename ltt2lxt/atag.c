@@ -54,7 +54,7 @@ static void atag_enqueue_addr(uint32_t addr, int flush)
 
     int i;
     char hex32buf[12];
-    uint32_t key[2];
+    char key[16];
     FILE *fp;
 
     ENTRY item, *rentry;
@@ -121,9 +121,8 @@ static void atag_enqueue_addr(uint32_t addr, int flush)
                 }
                 else {
                     //  add entry into hash table
-                    key[0] = addrbuf[i];
-                    key[1] = 0;
-                    item.key = strdup((char *)key);
+                    snprintf(key, sizeof(key), "%08x", addrbuf[i]);
+                    item.key = strdup(key);
                     item.data = (void *)ret;
                     rentry = hsearch(item, ENTER);
                     assert(rentry);
@@ -139,14 +138,13 @@ static void atag_enqueue_addr(uint32_t addr, int flush)
 char * atag_get(uint32_t addr)
 {
     char *ret = NULL;
-    uint32_t key[2];
+    char key[16];
     ENTRY item, *fitem;
 
     if (exefile) {
-        key[0] = addr;
-        key[1] = 0;
+	snprintf(key, sizeof(key), "%08x", addr);
         // lookup address info in hash table
-        item.key = (char *)key;
+        item.key = key;
         fitem = hsearch(item, FIND);
         if (fitem) {
             ret = (char *)fitem->data;
