@@ -17,8 +17,8 @@ static struct hsearch_data table;
 
 void modules_init(void)
 {
-	unsigned int modcnt;
-	int i, status;
+	unsigned int i, modcnt;
+	int status;
 	ENTRY entry, *ret;
 
 	status = hcreate_r(100, &table);

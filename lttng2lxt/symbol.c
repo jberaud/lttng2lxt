@@ -35,7 +35,7 @@ static void insert_symbol(struct ltt_trace *tr)
 	tr->sym = lt_symbol_find(lt, tr->name);
 	if (!tr->sym) {
 		bits = 0;
-		if (tr->flags == TRACE_SYM_F_ADDR && !atag_enabled)
+		if ((tr->flags == TRACE_SYM_F_ADDR) && !atag_enabled)
 			tr->flags = TRACE_SYM_F_INTEGER;
 
 		switch (tr->flags) {

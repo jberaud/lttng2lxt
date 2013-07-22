@@ -1029,7 +1029,7 @@ lt->zhandle = gzdopen(dup(fileno(lt->handle)), "wb9");
 lt_recurse_dictionary(lt, lt->dict);
 qsort((void *)lt->sorted_dict, lt->num_dict_entries, sizeof(struct dsTree **), lt_dictval_compare);
 
-for(i=0;i<lt->num_dict_entries;i++)
+for(i=0;i<(int)lt->num_dict_entries;i++)
 	{
 	dslxt_Tree *ds = lt->sorted_dict[i];
 	/* fprintf(stderr, "%8d) '%s'\n", ds->val, ds->item); */
@@ -1914,7 +1914,7 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 
 		if(!optimized)
 			{
-			if((lt->dictmode)&&(len>lt->mindictwidth))
+				if((lt->dictmode)&&(len>(int)lt->mindictwidth))
 				{
 				char *vpnt_orig = lt_expand_integer_to_bits(len, value);
 				char *vpnt = vpnt_orig;
@@ -2595,7 +2595,7 @@ if(!(s->flags&(LT_SYM_F_DOUBLE|LT_SYM_F_STRING)))
 
 				pnt = value;				
 
-				if((lt->dictmode)&&(len2>lt->mindictwidth))
+				if((lt->dictmode)&&(len2>(int)lt->mindictwidth))
 					{
 					char *vpnt = value;
 					while ( (*vpnt == '0') && (*(vpnt+1)) ) vpnt++;

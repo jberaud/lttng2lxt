@@ -3,7 +3,7 @@
 PREFIX  ?=/
 INSTALL = install
 CC	= gcc
-CFLAGS	= -g -Wall -O2
+CFLAGS	= -g -Wall -Wextra -Wno-unused -O2
 HEADERS = lxt_write.h lttng2lxt.h
 LIBS	= -lbabeltrace-ctf -lbabeltrace -lz -lbz2
 PROGRAM = lttng2lxt

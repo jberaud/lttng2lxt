@@ -33,9 +33,9 @@ enum {
 };
 
 //! Additional pseudo-trace symbol type
-#define TRACE_SYM_F_ANALOG        ((1<<29)|TRACE_SYM_F_DOUBLE)
-#define TRACE_SYM_F_U16           ((1<<30)|TRACE_SYM_F_INTEGER)
-#define TRACE_SYM_F_ADDR          (1<<31)
+#define TRACE_SYM_F_ANALOG        ((1U<<29)|TRACE_SYM_F_DOUBLE)
+#define TRACE_SYM_F_U16           ((1U<<30)|TRACE_SYM_F_INTEGER)
+#define TRACE_SYM_F_ADDR          (1U<<31)
 
 #define PFX "lttng2lxt: "
 
