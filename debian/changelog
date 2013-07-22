@@ -1,3 +1,9 @@
+parrot-tools-ltt (0.1.5) unstable; urgency=low
+
+  * Add early alpha version of lttng2lxt
+
+ -- Ivan DJELIC <ivan.djelic@parrot.com>  Tue, 22 July 2013 11:15:00 +0200
+
 parrot-tools-ltt (0.1.4) unstable; urgency=low
 
   * Fix old bug giving wrong address symbols

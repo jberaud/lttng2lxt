@@ -8,6 +8,7 @@ build-stamp:
 	dh_testdir
 	touch build-stamp
 	make -C ./ltt2lxt DESTDIR=$(destdir) PREFIX=/usr/local
+	make -C ./lttng2lxt DESTDIR=$(destdir) PREFIX=/usr/local
 
 clean:
 	dh_testdir
@@ -22,6 +23,7 @@ install-stamp: build-stamp
 	dh_clean -k
 	dh_installdirs usr/local
 	make -C ./ltt2lxt DESTDIR=$(destdir) PREFIX=/usr/local install-bin
+	make -C ./lttng2lxt DESTDIR=$(destdir) PREFIX=/usr/local install
 	touch install-stamp
 
 binary-indep: build install
