@@ -222,6 +222,10 @@ static void sched_switch_process(int pass, double clock, int cpu,
 		if (!(prev_state & 0x70 /*XXX*/))
 			emit_trace(current_process,
 				   (union ltt_value)PROCESS_IDLE);
+		else
+			emit_trace(current_process,
+				   (union ltt_value)PROCESS_DEAD);
+
 		if (prev_tid == 0)
 			set_cpu_idle(clock, cpu);
 
@@ -296,7 +300,11 @@ static void sched_process_wait_process(int pass, double clock, int cpu,
 }
 MODULE(sched_process_wait, "comm", "tid");
 
-static void sched_process_exit_process(int pass, double clock, int cpu,
+/*
+ * 'sched_process_exit' happens way before the process really exits, track
+ * state using 'sched_process_free' instead.
+ */
+static void sched_process_free_process(int pass, double clock, int cpu,
 				       union arg_value *args[MAX_ARGS])
 {
 	int tid;
@@ -314,7 +322,7 @@ static void sched_process_exit_process(int pass, double clock, int cpu,
 		emit_trace(tr, (union ltt_value)PROCESS_DEAD);
 	}
 }
-MODULE(sched_process_exit, "comm", "tid");
+MODULE(sched_process_free, "comm", "tid");
 
 static void sched_process_fork_process(int pass, double clock, int cpu,
 				       union arg_value *args[MAX_ARGS])
