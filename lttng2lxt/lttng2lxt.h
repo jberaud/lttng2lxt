@@ -113,6 +113,13 @@ struct ltt_module {
 		.process = _name_ ## _process,				\
 	}
 
+#define MODULE2(_name_, _subname_,...)						\
+	MODSECT(1_ ## _name_ ##_## _subname_) struct ltt_module __ ## _name_ ## _subname_= {	\
+		.name    = #_name_ ":" # _subname_,					\
+		.args    = {__VA_ARGS__},				\
+		.process = _name_ ##_## _subname_ ## _process,				\
+	}
+
 #define FATAL(_fmt, args...)				\
 	do {						\
 		fprintf(stderr, PFX _fmt, ##args);      \
