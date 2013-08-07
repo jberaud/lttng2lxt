@@ -36,7 +36,7 @@ static void usage(void)
 int main(int argc, char *argv[])
 {
 	int c, ret;
-	const char *tracefile;
+	char *tracefile;
 	char *lxtfile, *savefile;
 
 	while ((c = getopt(argc, argv, "hvdce:")) != -1) {
@@ -75,6 +75,8 @@ int main(int argc, char *argv[])
 		savefile = argv[optind+2];
 	} else {
 		/* make new names with proper extensions */
+        if (tracefile[strlen(tracefile)-1] == '/')  /* strip last / */
+            tracefile[strlen(tracefile)-1] = 0;
 		ret = asprintf(&lxtfile, "%s.lxt", tracefile);
 		assert(ret > 0);
 		ret = asprintf(&savefile, "%s.sav", tracefile);

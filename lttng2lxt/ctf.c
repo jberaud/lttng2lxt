@@ -14,6 +14,10 @@
 #include <babeltrace/ctf/iterator.h>
 #include <babeltrace/ctf/events.h>
 #include <babeltrace/ctf/callbacks.h>
+#include <ftw.h>
+#include <fcntl.h>
+
+static struct bt_context *ctx;
 
 static void process_one_event(struct bt_ctf_event *ctf_event, double clock,
 			      struct ltt_module *mod, int pass)
@@ -115,19 +119,50 @@ static void process_events(struct bt_ctf_iter *iter, int pass)
 	}
 }
 
+/*
+ * traverse_trace_dir() is the callback function for File Tree Walk (nftw).
+ * it receives the path of the current entry (file, dir, link..etc) with
+ * a flag to indicate the type of the entry.
+ * if the entry being visited is a directory and contains a metadata file,
+ * then add the path to a global list to be processed later in
+ * add_traces_recursive.
+ */
+static int traverse_trace_dir(const char *fpath, const struct stat *sb,
+			int tflag, struct FTW *ftwbuf)
+{
+    /* size of "fpath/metadata" + '0' */
+    size_t sz = sizeof(char) * (strlen(fpath) + strlen("metadata") + 2);
+
+    char *metadata = malloc(sz);
+    if (!metadata)
+        return -1;
+
+    snprintf(metadata, sz, "%s/%s", fpath, "metadata");
+    if (access(metadata, R_OK))
+        return 0;
+
+    int trace_id = bt_context_add_trace(ctx, fpath, "ctf",
+            NULL, NULL, NULL);
+    if (trace_id < 0)
+        FATAL("[warning] [Context] cannot open trace \"%s\" for reading.\n", fpath);
+
+	return 0;
+}
+
 void scan_lttng_trace(const char *name)
 {
-	struct bt_context *ctx;
 	struct bt_ctf_iter *iter;
 	struct bt_iter_pos begin_pos;
-	int tid, ret;
+	int ret;
 
 	ctx = bt_context_create();
 	assert(ctx);
 
-	tid = bt_context_add_trace(ctx, name, "ctf", NULL, NULL, NULL);
-	if (tid < 0)
+	ret = nftw(name, traverse_trace_dir, 10, 0);
+	if (ret < 0) {
 		FATAL("cannot open trace '%s'\n", name);
+        goto exit;
+    }
 
 	begin_pos.type = BT_SEEK_BEGIN;
 	iter = bt_ctf_iter_create(ctx, &begin_pos, NULL);
@@ -148,6 +183,9 @@ void scan_lttng_trace(const char *name)
 	process_events(iter, 2);
 
 	bt_ctf_iter_destroy(iter);
-	bt_context_remove_trace(ctx, tid);
 	bt_context_put(ctx);
+
+exit:
+    return;
 }
+
