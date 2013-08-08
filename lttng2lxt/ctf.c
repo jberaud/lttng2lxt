@@ -18,6 +18,7 @@
 #include <fcntl.h>
 
 static struct bt_context *ctx;
+static uint32_t tids;
 
 static void process_one_event(struct bt_ctf_event *ctf_event, double clock,
 			      struct ltt_module *mod, int pass)
@@ -33,7 +34,7 @@ static void process_one_event(struct bt_ctf_event *ctf_event, double clock,
 
 	scope = bt_ctf_get_top_level_scope(ctf_event, BT_STREAM_PACKET_CONTEXT);
 	assert(scope);
-/*
+	/*
 	{
 		int ret;
 		unsigned int count;
@@ -45,7 +46,7 @@ static void process_one_event(struct bt_ctf_event *ctf_event, double clock,
 			INFO("\tfield '%s'\n", bt_ctf_field_name(list[i]));
 		INFO("\n");
 	}
-*/
+	*/
 	def = bt_ctf_get_field(ctf_event, scope, "cpu_id");
 	assert(def);
 	cpu_id = (int)bt_ctf_get_uint64(def);
@@ -119,33 +120,34 @@ static void process_events(struct bt_ctf_iter *iter, int pass)
 	}
 }
 
-/*
- * traverse_trace_dir() is the callback function for File Tree Walk (nftw).
- * it receives the path of the current entry (file, dir, link..etc) with
- * a flag to indicate the type of the entry.
- * if the entry being visited is a directory and contains a metadata file,
- * then add the path to a global list to be processed later in
- * add_traces_recursive.
- */
 static int traverse_trace_dir(const char *fpath, const struct stat *sb,
-			int tflag, struct FTW *ftwbuf)
+                              int tflag, struct FTW *ftwbuf)
 {
-    /* size of "fpath/metadata" + '0' */
-    size_t sz = sizeof(char) * (strlen(fpath) + strlen("metadata") + 2);
+	int tid;
+	/* size of "fpath/metadata" + '0' */
+	size_t sz = sizeof(char) * (strlen(fpath) + strlen("metadata") + 2);
 
-    char *metadata = malloc(sz);
-    if (!metadata)
-        return -1;
+	char *metadata = malloc(sz);
+	if (!metadata)
+		return -1;
 
-    snprintf(metadata, sz, "%s/%s", fpath, "metadata");
-    if (access(metadata, R_OK))
-        return 0;
+	snprintf(metadata, sz, "%s/%s", fpath, "metadata");
+	if (access(metadata, R_OK))
+		goto exit;
 
-    int trace_id = bt_context_add_trace(ctx, fpath, "ctf",
-            NULL, NULL, NULL);
-    if (trace_id < 0)
-        FATAL("[warning] [Context] cannot open trace \"%s\" for reading.\n", fpath);
+	tid = bt_context_add_trace(ctx, fpath, "ctf",
+			NULL, NULL, NULL);
+	if (tid < 0) {
+		FATAL("[warning] [Context] cannot open trace \"%s\" for reading.\n", fpath);
+		goto exit;
+	}
+	if (tid > 31)
+		goto exit;
 
+	tids |= 1 << tid;
+
+exit:
+	free(metadata);
 	return 0;
 }
 
@@ -153,7 +155,7 @@ void scan_lttng_trace(const char *name)
 {
 	struct bt_ctf_iter *iter;
 	struct bt_iter_pos begin_pos;
-	int ret;
+	int ret, i;
 
 	ctx = bt_context_create();
 	assert(ctx);
@@ -161,8 +163,8 @@ void scan_lttng_trace(const char *name)
 	ret = nftw(name, traverse_trace_dir, 10, 0);
 	if (ret < 0) {
 		FATAL("cannot open trace '%s'\n", name);
-        goto exit;
-    }
+		goto exit;
+	}
 
 	begin_pos.type = BT_SEEK_BEGIN;
 	iter = bt_ctf_iter_create(ctx, &begin_pos, NULL);
@@ -183,9 +185,17 @@ void scan_lttng_trace(const char *name)
 	process_events(iter, 2);
 
 	bt_ctf_iter_destroy(iter);
+	i = 0;
+	while (tids) {
+		if (tids & (1 << i)) {
+			bt_context_remove_trace(ctx, i);
+			tids &= ~(1 << i);
+			i++;
+		}
+	}
 	bt_context_put(ctx);
 
 exit:
-    return;
+	return;
 }
 

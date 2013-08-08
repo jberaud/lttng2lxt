@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
 		savefile = argv[optind+2];
 	} else {
 		/* make new names with proper extensions */
-        if (tracefile[strlen(tracefile)-1] == '/')  /* strip last / */
-            tracefile[strlen(tracefile)-1] = 0;
+		if (tracefile[strlen(tracefile)-1] == '/')  /* strip last / */
+			tracefile[strlen(tracefile)-1] = 0;
 		ret = asprintf(&lxtfile, "%s.lxt", tracefile);
 		assert(ret > 0);
 		ret = asprintf(&savefile, "%s.sav", tracefile);
