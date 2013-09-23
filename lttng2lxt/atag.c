@@ -14,8 +14,8 @@
 #define ADDR2LINE_MAX           (128)
 #define ADDR_SIZE               (12)
 
-int atag_enabled = 0;
-static const char *exefile = NULL;
+int atag_enabled;
+static const char *exefile;
 
 static void snprintf_up(char **p, int size, const char *fmt, ...)
 {
@@ -48,7 +48,7 @@ static void atag_enqueue_addr(uint32_t addr, int flush)
 	static char funcname[LINEBUF_MAX];
 	static char basename[LINEBUF_MAX];
 	static char tag[LINEBUF_MAX];
-	static int index = 0;
+	static int index;
 	static uint32_t addrbuf[ADDR2LINE_MAX];
 	char key[16];
 	ENTRY item, *rentry;
@@ -102,10 +102,11 @@ static void atag_enqueue_addr(uint32_t addr, int flush)
 				*str = '\0';
 
 			if (funcname[0] != '?')
-				snprintf(tag, sizeof(tag), "%s() [%s]", funcname,
-					 basename);
+				snprintf(tag, sizeof(tag), "%s() [%s]",
+					 funcname, basename);
 			else
-				snprintf(tag, sizeof(tag), "0x%08x", addrbuf[i]);
+				snprintf(tag, sizeof(tag), "0x%08x",
+					 addrbuf[i]);
 
 			ret = strdup(tag);
 		}
@@ -128,7 +129,7 @@ static void atag_enqueue_addr(uint32_t addr, int flush)
 	index = 0;
 }
 
-char * atag_get(uint32_t addr)
+char *atag_get(uint32_t addr)
 {
 	char *ret = NULL;
 	char key[16];

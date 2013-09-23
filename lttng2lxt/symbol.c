@@ -11,8 +11,8 @@
 #include "lttng2lxt.h"
 #include "lxt_write.h"
 
-static struct lt_trace *lt = NULL;
-static struct ltt_trace *head = NULL;
+static struct lt_trace *lt;
+static struct ltt_trace *head;
 static int symbol_flushed;
 static const char *lxt_name;
 
@@ -65,10 +65,10 @@ static void insert_symbol(struct ltt_trace *tr)
 }
 
 void init_trace(struct ltt_trace *tr,
-                enum trace_group group,
-                double pos,
-                uint32_t flags,
-                const char *fmt, ...)
+		enum trace_group group,
+		double pos,
+		uint32_t flags,
+		const char *fmt, ...)
 {
 	va_list ap;
 	static char linebuf[LINEBUF_MAX];
@@ -87,7 +87,8 @@ void init_trace(struct ltt_trace *tr,
 
 		tr->name = strdup(linebuf);
 
-		INFO("adding trace '%s' group=%d pos=%g\n", linebuf, group, pos);
+		INFO("adding trace '%s' group=%d pos=%g\n", linebuf, group,
+		     pos);
 		if (symbol_flushed)
 			/* XXX hack late symbol flush */
 			insert_symbol(tr);
@@ -169,7 +170,7 @@ struct ltt_trace *trace_head(void)
 void emit_clock(double clock)
 {
 	lxttime_t timeval;
-	static lxttime_t oldtimeval = 0;
+	static lxttime_t oldtimeval;
 
 	timeval = (lxttime_t)(1000000000.0*clock);
 	if (timeval < oldtimeval) {

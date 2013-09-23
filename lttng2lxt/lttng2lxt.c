@@ -10,9 +10,9 @@
 
 #include "lttng2lxt.h"
 
-int verbose = 0;
-int diag = 0;
-int gtkwave_parrot = 0;
+int verbose;
+int diag;
+int gtkwave_parrot;
 
 static void link_gtkw_file(const char *tracefile, const char *savefile)
 {

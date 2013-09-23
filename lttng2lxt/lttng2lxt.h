@@ -32,7 +32,7 @@ enum {
 	TRACE_SYM_F_DOUBLE,
 };
 
-//! Additional pseudo-trace symbol type
+/* Additional pseudo-trace symbol type */
 #define TRACE_SYM_F_ANALOG        ((1U<<29)|TRACE_SYM_F_DOUBLE)
 #define TRACE_SYM_F_U16           ((1U<<30)|TRACE_SYM_F_INTEGER)
 #define TRACE_SYM_F_ADDR          (1U<<31)
@@ -113,11 +113,11 @@ struct ltt_module {
 		.process = _name_ ## _process,				\
 	}
 
-#define MODULE2(_name_, _subname_,...)						\
-	MODSECT(1_ ## _name_ ##_## _subname_) struct ltt_module __ ## _name_ ## _subname_= {	\
-		.name    = #_name_ ":" # _subname_,					\
+#define MODULE2(_n, _sub, ...)						\
+	MODSECT(1_ ## _n ##_## _sub) struct ltt_module __ ## _n ## _sub = { \
+		.name    = #_n ":" # _sub,				\
 		.args    = {__VA_ARGS__},				\
-		.process = _name_ ##_## _subname_ ## _process,				\
+		.process = _n ##_## _sub ## _process,			\
 	}
 
 #define FATAL(_fmt, args...)				\
@@ -144,8 +144,6 @@ struct ltt_module {
 		}							\
 	} while (0)
 
-#define PARSE_ERROR(_m,_v) DIAG("%s: cannot parse values '%s'\n",(_m)->name, _v)
-
 extern int verbose;
 extern int diag;
 extern int gtkwave_parrot;
@@ -157,10 +155,10 @@ void atag_store(uint32_t addr);
 void atag_flush(void);
 
 void init_trace(struct ltt_trace *tr,
-                enum trace_group group,
-                double pos,
-                uint32_t flags,
-                const char *fmt, ...);
+		enum trace_group group,
+		double pos,
+		uint32_t flags,
+		const char *fmt, ...);
 void refresh_name(struct ltt_trace *tr,
 		  const char *fmt, ...);
 void symbol_flush(void);
@@ -171,8 +169,8 @@ void emit_clock(double clock);
 void save_dump_init(const char *name);
 void save_dump_close(void);
 
-struct ltt_trace * find_or_add_task_trace(const char *name, int pid, int tgid);
-struct ltt_trace * find_task_trace(int pid);
+struct ltt_trace *find_or_add_task_trace(const char *name, int pid, int tgid);
+struct ltt_trace *find_task_trace(int pid);
 
 void parse_init(void);
 int parse_line(char *line, struct parse_result *res);

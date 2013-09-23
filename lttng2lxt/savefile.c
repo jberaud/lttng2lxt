@@ -26,10 +26,11 @@ static int compare_traces(const void *t1, const void *t2)
 {
 	double d = (*(struct ltt_trace **)t1)->pos-
 		(*(struct ltt_trace **)t2)->pos;
-	return (d > 0.0)? 1 : ((d < 0.0)? -1 : 0);
+	return (d > 0.0) ? 1 : ((d < 0.0) ? -1 : 0);
 }
 
-static void sort_traces(enum trace_group group, struct ltt_trace **tab,int *len)
+static void sort_traces(enum trace_group group, struct ltt_trace **tab,
+			int *len)
 {
 	int n;
 	struct ltt_trace *trace;
@@ -47,28 +48,32 @@ static void sort_traces(enum trace_group group, struct ltt_trace **tab,int *len)
 }
 
 static void print_group(enum trace_group group, const char *name, FILE *fp,
-                        struct ltt_trace **tab)
+			struct ltt_trace **tab)
 {
 	int i, tablen;
 	unsigned int flag;
 
 	sort_traces(group, tab, &tablen);
-	if (tablen > 0) {
-		fprintf(fp, "@%x\n-%s\n", TR_BLANK, name);
+	if (tablen <= 0)
+		return;
 
-		for (i = 0; i < tablen; i++) {
-			flag = 0;
-			flag |= (tab[i]->flags & TRACE_SYM_F_BITS)?    TR_BIN : 0;
-			flag |= (tab[i]->flags & TRACE_SYM_F_INTEGER)? TR_HEX : 0;
-			flag |= (tab[i]->flags & TRACE_SYM_F_STRING)?  TR_ASCII : 0;
+	fprintf(fp, "@%x\n-%s\n", TR_BLANK, name);
 
-			/* overrides */
-			if (tab[i]->flags == TRACE_SYM_F_ANALOG)
-				flag = TR_ANALOG_INTERPOLATED|TR_DEC|TR_ANALOG_FULLSCALE;
+	for (i = 0; i < tablen; i++) {
+		flag = 0;
+		flag |= (tab[i]->flags & TRACE_SYM_F_BITS) ?    TR_BIN : 0;
+		flag |= (tab[i]->flags & TRACE_SYM_F_INTEGER) ? TR_HEX : 0;
+		flag |= (tab[i]->flags & TRACE_SYM_F_STRING) ?  TR_ASCII : 0;
 
-			fprintf(fp, "@%x\n%s%s\n", flag|TR_RJUSTIFY, tab[i]->name,
-				(tab[i]->flags == TRACE_SYM_F_U16)? "[0:15]":"");
+		/* overrides */
+		if (tab[i]->flags == TRACE_SYM_F_ANALOG) {
+			flag = (TR_ANALOG_INTERPOLATED|
+				TR_DEC|
+				TR_ANALOG_FULLSCALE);
 		}
+
+		fprintf(fp, "@%x\n%s%s\n", flag|TR_RJUSTIFY, tab[i]->name,
+			(tab[i]->flags == TRACE_SYM_F_U16) ? "[0:15]" : "");
 	}
 }
 
@@ -87,7 +92,8 @@ void write_savefile(const char *name)
 
 	fp = fopen(name, "wb");
 	if (fp == NULL)
-		FATAL("cannot write savefile '%s': %s\n", name, strerror(errno));
+		FATAL("cannot write savefile '%s': %s\n", name,
+		      strerror(errno));
 
 	INFO("writing SAV file '%s'...\n", name);
 
@@ -96,6 +102,5 @@ void write_savefile(const char *name)
 	print_group(TG_PROCESS, "Processes", fp, tab);
 
 	free(tab);
-
 	fclose(fp);
 }

@@ -70,7 +70,8 @@ void set_cpu_idle(double clock, int cpu)
 void set_cpu_running(double clock, int cpu)
 {
 	idle_cpu_state[cpu] = IDLE_RUNNING;
-	(void)emit_cpu_idle_state(clock, cpu, (union ltt_value)IDLE_CPU_RUNNING);
+	(void)emit_cpu_idle_state(clock, cpu,
+				  (union ltt_value)IDLE_CPU_RUNNING);
 }
 
 void cpu_preempt(double clock, int cpu)
@@ -83,14 +84,18 @@ void cpu_preempt(double clock, int cpu)
 
 void cpu_unpreempt(double clock, int cpu)
 {
+	union ltt_value value;
+
 	if (idle_cpu_preempt[cpu] <= 0)
 		return;
 
 	idle_cpu_preempt[cpu]--;
+
 	if (idle_cpu_preempt[cpu] == 0) {
-		(void)emit_cpu_idle_state(clock, cpu,
-					  (idle_cpu_state[cpu] == IDLE_RUNNING) ?
-					  (union ltt_value)IDLE_CPU_RUNNING :
-					  (union ltt_value)IDLE_CPU_IDLE);
+		if (idle_cpu_state[cpu] == IDLE_RUNNING)
+			value.state = IDLE_CPU_RUNNING;
+		else
+			value.state = IDLE_CPU_IDLE;
+		(void)emit_cpu_idle_state(clock, cpu, value);
 	}
 }

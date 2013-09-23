@@ -30,8 +30,8 @@ static void *root;
 
 static int compare(const void *pa, const void *pb)
 {
-	int a = ((struct tdata*)pa)->pid;
-	int b = ((struct tdata*)pb)->pid;
+	int a = ((struct tdata *)pa)->pid;
+	int b = ((struct tdata *)pb)->pid;
 
 	if (a < b)
 		return -1;
@@ -41,7 +41,7 @@ static int compare(const void *pa, const void *pb)
 	return 0;
 }
 
-struct ltt_trace * find_task_trace(int pid)
+struct ltt_trace *find_task_trace(int pid)
 {
 	struct tdata tdata, *ret;
 
@@ -55,7 +55,7 @@ struct ltt_trace * find_task_trace(int pid)
 		return r;
 	}
 	assert(ret);
-	ret = *((void**)ret);
+	ret = *((void **)ret);
 	return ret->data;
 }
 
@@ -71,7 +71,7 @@ static void update_task_tgid(int pid, int tgid)
 	}
 }
 
-struct ltt_trace * find_or_add_task_trace(const char *name, int pid, int tgid)
+struct ltt_trace *find_or_add_task_trace(const char *name, int pid, int tgid)
 {
 	int cpu;
 	struct tdata tdata, *ret;
@@ -102,7 +102,7 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid, int tgid)
 		if (!name)
 			name = "????";
 
-		//printf("insert pid %d\n", pid);
+		/*printf("insert pid %d\n", pid);*/
 		data = calloc(2, sizeof(struct ltt_trace));
 		assert(data);
 
@@ -119,11 +119,11 @@ struct ltt_trace * find_or_add_task_trace(const char *name, int pid, int tgid)
 		init_trace(&data[1], /*TG_PROCESS*/0, 1.1 + (tgid<<16) + pid,
 			   TRACE_SYM_F_STRING, PROCESS_INFO, tgid, pid, name);
 		data[0].value.state = NULL;
-		ret = *((void**)ret);
+		ret = *((void **)ret);
 	} else if (strcmp(name, "no name") != 0 &&
 		   strcmp(name, "kthreadd") != 0 /* XXX */) {
 
-		ret = *((void**)ret);
+		ret = *((void **)ret);
 		if (tgid == 0 && ret->tgid != 0)
 			tgid = ret->tgid;
 		ret->tgid = tgid;
@@ -145,7 +145,7 @@ void lttng_statedump_process_state_process(int pass, double clock, int cpu,
 	tid = (int)args[0]->u64;
 	pid = (int)args[1]->u64;
 	name = args[2]->s;
-	//type = (int)args[3]->u64;
+	/*type = (int)args[3]->u64;*/
 	mode = (int)args[4]->u64;
 	status = (int)args[5]->u64;
 
@@ -192,7 +192,7 @@ void lttng_statedump_process_state_process(int pass, double clock, int cpu,
 	}
 }
 MODULE(lttng_statedump_process_state,
-       "tid", "pid", "name", "type", "mode", "status");
+	"tid", "pid", "name", "type", "mode", "status");
 
 static void sched_switch_process(int pass, double clock, int cpu,
 				 union arg_value *args[MAX_ARGS])
@@ -247,7 +247,7 @@ static void sched_switch_process(int pass, double clock, int cpu,
 	}
 }
 MODULE(sched_switch, "prev_comm", "prev_tid", "prev_state", "next_comm",
-       "next_tid");
+	"next_tid");
 
 static void sched_wakeup_process(int pass, double clock, int cpu,
 				 union arg_value *args[MAX_ARGS])
@@ -286,7 +286,7 @@ static void sched_process_wait_process(int pass, double clock, int cpu,
 	comm = args[0]->s;
 	tid = (int)args[1]->u64;
 
-	//FIXME
+	/*FIXME*/
 	if (!tid)
 		return;
 
@@ -327,14 +327,14 @@ MODULE(sched_process_free, "comm", "tid");
 static void sched_process_fork_process(int pass, double clock, int cpu,
 				       union arg_value *args[MAX_ARGS])
 {
-	int parent_tid, child_tid;
+	int child_tid;
 	const char *child_comm;
 
-	parent_tid = (int)args[0]->u64;
-	child_comm = args[1]->s;
-	child_tid = (int)args[2]->u64;
-
+	child_comm = args[0]->s;
+	child_tid = (int)args[1]->u64;
+/*
 	if (pass == 1)
-		find_or_add_task_trace(child_comm, child_tid, parent_tid);
+		find_or_add_task_trace(child_comm, child_tid, child_tid);
+*/
 }
-MODULE(sched_process_fork, "parent_tid", "child_comm", "child_tid");
+MODULE(sched_process_fork, "child_comm", "child_tid");

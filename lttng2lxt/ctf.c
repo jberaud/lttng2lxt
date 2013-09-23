@@ -121,7 +121,7 @@ static void process_events(struct bt_ctf_iter *iter, int pass)
 }
 
 static int traverse_trace_dir(const char *fpath, const struct stat *sb,
-                              int tflag, struct FTW *ftwbuf)
+			      int tflag, struct FTW *ftwbuf)
 {
 	int tid;
 	/* size of "fpath/metadata" + '0' */
@@ -137,10 +137,9 @@ static int traverse_trace_dir(const char *fpath, const struct stat *sb,
 
 	tid = bt_context_add_trace(ctx, fpath, "ctf",
 			NULL, NULL, NULL);
-	if (tid < 0) {
-		FATAL("[warning] [Context] cannot open trace \"%s\" for reading.\n", fpath);
-		goto exit;
-	}
+	if (tid < 0)
+		FATAL("cannot open trace '%s' for reading\n", fpath);
+
 	if (tid > 31)
 		goto exit;
 
@@ -161,17 +160,15 @@ void scan_lttng_trace(const char *name)
 	assert(ctx);
 
 	ret = nftw(name, traverse_trace_dir, 10, 0);
-	if (ret < 0) {
+	if (ret < 0)
 		FATAL("cannot open trace '%s'\n", name);
-		goto exit;
-	}
 
 	begin_pos.type = BT_SEEK_BEGIN;
 	iter = bt_ctf_iter_create(ctx, &begin_pos, NULL);
 	if (!iter)
 		FATAL("cannot iterate on trace '%s'\n", name);
 
-	INFO("pass 1: initializing modules and converting address to symbols\n");
+	INFO("pass 1: initializing modules and converting addresses\n");
 	process_events(iter, 1);
 
 	/* flush address symbol conversion pipe */
@@ -193,9 +190,7 @@ void scan_lttng_trace(const char *name)
 			i++;
 		}
 	}
-	bt_context_put(ctx);
 
-exit:
-	return;
+	bt_context_put(ctx);
 }
 

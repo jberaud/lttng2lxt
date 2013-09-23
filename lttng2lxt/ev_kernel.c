@@ -26,23 +26,23 @@ enum {
 };
 
 /* sofirq val */
-enum
-{
-	HI_SOFTIRQ=0,
+enum {
+	HI_SOFTIRQ = 0,
 	TIMER_SOFTIRQ,
 	NET_TX_SOFTIRQ,
 	NET_RX_SOFTIRQ,
 	BLOCK_SOFTIRQ,
 	TASKLET_SOFTIRQ,
 	SCHED_SOFTIRQ,
-//#ifdef CONFIG_HIGH_RES_TIMERS
+/*#ifdef CONFIG_HIGH_RES_TIMERS*/
 	HRTIMER_SOFTIRQ,
-//#endif
+/*#endif*/
 	RCU_SOFTIRQ,    /* Preferable RCU should always be the last softirq */
 };
 
 #define str(x) [x] = #x
-static char *sofirq_tag [] = {
+
+static char *sofirq_tag[] = {
 	str(HI_SOFTIRQ),
 	str(TIMER_SOFTIRQ),
 	str(NET_TX_SOFTIRQ),
@@ -61,9 +61,11 @@ static int irqlevel[MAX_CPU];
 static char *irq_tag[MAX_IRQS];
 
 static int softirqstate[MAX_CPU];
-//static double softirqtime;
-//static char softirqtask[30];
-//static double irqtime;
+/*
+static double softirqtime;
+static char softirqtask[30];
+static double irqtime;
+*/
 
 static struct ltt_trace trace[MAX_CPU][MAX_IRQS];
 static struct ltt_trace sirq[MAX_CPU][3];
@@ -81,7 +83,7 @@ static void update_irq_name(int irq, const char *name)
 			free(irq_tag[irq]);
 			irq_tag[irq] = strdup(buf);
 		}
-        }
+	}
 }
 
 static void irq_handler_entry_process(int pass, double clock, int cpu,
@@ -93,7 +95,9 @@ static void irq_handler_entry_process(int pass, double clock, int cpu,
 	irq  = (int)args[0]->i64;
 	name = args[1]->s;
 
-	//INFO("irq_handler_entry: irq %d name '%s'\n", irq, name);
+	/*
+	  INFO("irq_handler_entry: irq %d name '%s'\n", irq, name);
+	*/
 
 	if (irq >= MAX_IRQS) {
 		DIAG("invalid IRQ vector ? (%d)\n", irq);
@@ -104,8 +108,8 @@ static void irq_handler_entry_process(int pass, double clock, int cpu,
 		update_irq_name(irq, name);
 		init_trace(&trace[cpu][irq], TG_IRQ, 1.0+irq, TRACE_SYM_F_BITS,
 			   "%s/%d", irq_tag[irq], cpu);
-		//atag_store(ip);
-        }
+		/*atag_store(ip);*/
+	}
 
 	if (pass == 2) {
 		if (irqlevel[cpu] >= MAX_IRQS) {
@@ -128,7 +132,7 @@ static void irq_handler_entry_process(int pass, double clock, int cpu,
 				   (union ltt_value)IRQ_PREEMPT);
 		}
 		emit_trace(&trace[cpu][irq], (union ltt_value)IRQ_RUNNING);
-		//emit_trace(&irq_pc, (union ltt_value)ip);
+		/*emit_trace(&irq_pc, (union ltt_value)ip);*/
 		irqtab[cpu][irqlevel[cpu]++] = irq;
 
 		cpu_preempt(clock, cpu);
@@ -180,7 +184,7 @@ static void softirq_entry_process(int pass, double clock, int cpu,
 	if ((vec < ARRAY_SIZE(sofirq_tag)) && sofirq_tag[vec])
 		emit_trace(&sirq[cpu][1], (union ltt_value)sofirq_tag[vec]);
 	else
-		emit_trace(&sirq[cpu][1],(union ltt_value)"softirq %d", vec);
+		emit_trace(&sirq[cpu][1], (union ltt_value)"softirq %d", vec);
 
 	softirqstate[cpu] = SOFTIRQS_RUN;
 }
@@ -195,12 +199,12 @@ static void softirq_exit_process(int pass, double clock, int cpu,
 	}
 
 	/* pass 2 */
-        if (softirqstate[cpu] == SOFTIRQS_RAISE)
+	if (softirqstate[cpu] == SOFTIRQS_RAISE)
 		emit_trace(&sirq[cpu][0], (union ltt_value)SOFTIRQ_RAISING);
-        else
+	else
 		emit_trace(&sirq[cpu][0], (union ltt_value)SOFTIRQ_IDLE);
 
 	cpu_unpreempt(clock, cpu);
-        softirqstate[cpu] = SOFTIRQS_IDLE;
+	softirqstate[cpu] = SOFTIRQS_IDLE;
 }
 MODULE(softirq_exit);

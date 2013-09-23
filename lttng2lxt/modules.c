@@ -48,6 +48,6 @@ struct ltt_module *find_module_by_name(const char *name)
 	if (ret)
 		return ret->data;
 
-	//INFO("no support for %s\n", name); //XXX
+	/*INFO("no support for %s\n", name);*/ /*XXX*/
 	return NULL;
 }
