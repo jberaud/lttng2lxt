@@ -2,8 +2,7 @@
  * LTTng to GTKwave trace conversion
  *
  * Authors:
- * Ivan Djelic <ivan.djelic@parrot.com>
- * Matthieu Castet <matthieu.castet@parrot.com>
+ * Adrien Charruel <adrien.charruel@parrot.com>
  *
  * Copyright (C) 2013 Parrot S.A.
  */
@@ -16,13 +15,8 @@
 static struct ltt_trace trace_g;
 static struct ltt_trace traces[MAX_USER_EVENTS];
 
-/*static void init_traces(void)
-  {
-  init_trace(&trace_g, TG_PROCESS, 0.1, TRACE_SYM_F_STRING, "user event");
-  }*/
-
-static void parrot_event_start_process(int pass, double clock, int cpu,
-				       union arg_value *args[MAX_ARGS])
+static void userspace_event_start_process(int pass, double clock, int cpu,
+					  union arg_value *args[MAX_ARGS])
 {
 	int num = (int)args[0]->i64;
 
@@ -38,10 +32,10 @@ static void parrot_event_start_process(int pass, double clock, int cpu,
 		}
 	}
 }
-MODULE2(parrot, event_start, "event_start");
+MODULE2(userspace, event_start, "event_start");
 
-static void parrot_event_stop_process(int pass, double clock, int cpu,
-                                      union arg_value *args[MAX_ARGS])
+static void userspace_event_stop_process(int pass, double clock, int cpu,
+					 union arg_value *args[MAX_ARGS])
 {
 	int num = (int)args[0]->i64;
 
@@ -57,10 +51,10 @@ static void parrot_event_stop_process(int pass, double clock, int cpu,
 		}
 	}
 }
-MODULE2(parrot, event_stop, "event_stop");
+MODULE2(userspace, event_stop, "event_stop");
 
-static void parrot_message_process(int pass, double clock, int cpu,
-                                   union arg_value *args[MAX_ARGS])
+static void userspace_message_process(int pass, double clock, int cpu,
+				      union arg_value *args[MAX_ARGS])
 {
 	const char * str = args[0]->s;
 
@@ -72,4 +66,4 @@ static void parrot_message_process(int pass, double clock, int cpu,
 		emit_trace(&trace_g, (union ltt_value)"%s", str);
 
 }
-MODULE2(parrot, message, "message");
+MODULE2(userspace, message, "message");
