@@ -80,6 +80,8 @@ MODULE_PATTERN(sys, sys_*);
 static void exit_syscall_process(const char *modname, int pass, double clock,
 				 int cpu, void *args)
 {
+	int ret;
+	char buf[80];
 	struct task *task;
 
 	if (pass == 1)
@@ -87,14 +89,15 @@ static void exit_syscall_process(const char *modname, int pass, double clock,
 
 	/* pass 2 only */
 
-	/*
-	 * 'ret' is the syscall id, there is no much point showing it
-	 * ret = (int)get_arg_i64(args, "ret");
-	 */
-
 	task = get_current_task(cpu);
 	if (task) {
-		emit_trace(task->info_trace, (union ltt_value)"");
+		/*
+		 * 'ret' is normally the syscall id; or the syscall return
+		 * value if lttng-modules is patched accordingly
+		 */
+		ret = (int)get_arg_i64(args, "ret");
+		snprintf(buf, sizeof(buf), "ret=%d", ret);
+		emit_trace(task->info_trace, (union ltt_value)buf);
 		task->mode = PROCESS_USER;
 		emit_trace(task->state_trace, (union ltt_value)task->mode);
 	}

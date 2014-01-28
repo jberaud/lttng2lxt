@@ -30,10 +30,15 @@ int get_arg(void *args, const char *name, struct arg_value *value)
 	enum ctf_type_id type;
 
 	scope = bt_ctf_get_top_level_scope(ctf_event, BT_EVENT_FIELDS);
+
 	def = bt_ctf_get_field(ctf_event, scope, name);
-	assert(def);
+	if (!def)
+		return -1;
+
 	decl = bt_ctf_get_decl_from_def(def);
-	assert(decl);
+	if (!decl)
+		return -1;
+
 	type = bt_ctf_field_type(decl);
 
 	switch (type) {
