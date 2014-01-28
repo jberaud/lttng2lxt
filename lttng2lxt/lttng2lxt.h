@@ -45,6 +45,7 @@ enum {
 #define LT_S0                     "x"
 #define LT_S1                     "u"
 #define LT_S2                     "w"
+#define LT_S3                     "-"
 #define LT_IDLE                   "z"
 #define LT_1                      "1"
 #define LT_0                      "0"
@@ -56,6 +57,7 @@ enum {
 #define PROCESS_KERNEL            (gtkwave_parrot ? LT_S0 : LT_1)
 #define PROCESS_USER              (gtkwave_parrot ? LT_S1 : LT_S0)
 #define PROCESS_WAKEUP            (gtkwave_parrot ? LT_S2 : LT_0)
+#define PROCESS_PREEMPTED         (gtkwave_parrot ? LT_S3 : LT_0)
 #define PROCESS_DEAD              LT_0
 
 enum trace_group {

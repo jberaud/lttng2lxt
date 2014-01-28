@@ -76,15 +76,23 @@ void set_cpu_running(double clock, int cpu)
 
 void cpu_preempt(double clock, int cpu)
 {
+	struct task *task;
+
 	idle_cpu_preempt[cpu]++;
-	if (idle_cpu_preempt[cpu] == 1)
+	if (idle_cpu_preempt[cpu] == 1) {
 		(void)emit_cpu_idle_state(clock, cpu,
 					  (union ltt_value)IDLE_CPU_PREEMPT);
+		task = get_current_task(cpu);
+		if (task)
+			emit_trace(task->state_trace,
+				   (union ltt_value)PROCESS_PREEMPTED);
+	}
 }
 
 void cpu_unpreempt(double clock, int cpu)
 {
 	union ltt_value value;
+	struct task *task;
 
 	if (idle_cpu_preempt[cpu] <= 0)
 		return;
@@ -92,10 +100,15 @@ void cpu_unpreempt(double clock, int cpu)
 	idle_cpu_preempt[cpu]--;
 
 	if (idle_cpu_preempt[cpu] == 0) {
-		if (idle_cpu_state[cpu] == IDLE_RUNNING)
+		if (idle_cpu_state[cpu] == IDLE_RUNNING) {
 			value.state = IDLE_CPU_RUNNING;
-		else
+			task = get_current_task(cpu);
+			if (task)
+				emit_trace(task->state_trace,
+					   (union ltt_value)task->mode);
+		} else {
 			value.state = IDLE_CPU_IDLE;
+		}
 		(void)emit_cpu_idle_state(clock, cpu, value);
 	}
 }
