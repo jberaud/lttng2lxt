@@ -5,7 +5,7 @@ INSTALL = install
 CC	= gcc
 CFLAGS	= -g -Wall -Wextra -Wno-unused-parameter -O3
 HEADERS = lxt_write.h lttng2lxt.h
-LIBS	= -lbabeltrace-ctf -lbabeltrace -lz -lbz2
+LIBS	= -Wl,-Bstatic -lbabeltrace-ctf -lbabeltrace -Wl,-Bdynamic -lglib-2.0 -lz -lbz2
 PROGRAM = lttng2lxt
 
 OBJS	= lxt_write.o lttng2lxt.o atag.o symbol.o modules.o savefile.o ctf.o \
