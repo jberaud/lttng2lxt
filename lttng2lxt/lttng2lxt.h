@@ -65,6 +65,7 @@ enum trace_group {
 	TG_IRQ,
 	TG_MM,
 	TG_GLOBAL,
+	TG_USER,
 	TG_PROCESS,
 };
 
