@@ -10,9 +10,9 @@
 
 #include "lttng2lxt.h"
 
-#define IDLE_CPU_IDLE    LT_IDLE
-#define IDLE_CPU_RUNNING LT_S0
-#define IDLE_CPU_PREEMPT LT_IDLE
+#define IDLE_CPU_IDLE    PROCESS_KERNEL
+#define IDLE_CPU_RUNNING PROCESS_IDLE
+#define IDLE_CPU_PREEMPT PROCESS_PREEMPTED
 
 enum {
 	IDLE_IDLE,
@@ -80,7 +80,8 @@ void cpu_preempt(double clock, int cpu)
 
 	idle_cpu_preempt[cpu]++;
 	if (idle_cpu_preempt[cpu] == 1) {
-		(void)emit_cpu_idle_state(clock, cpu,
+		if (idle_cpu_state[cpu] == IDLE_IDLE)
+			(void)emit_cpu_idle_state(clock, cpu,
 					  (union ltt_value)IDLE_CPU_PREEMPT);
 		task = get_current_task(cpu);
 		if (task)
@@ -106,6 +107,8 @@ void cpu_unpreempt(double clock, int cpu)
 			if (task)
 				emit_trace(task->state_trace,
 					   (union ltt_value)task->mode);
+			else
+				INFO("cpu unpreempt : no more task for cpu %d at %lf\n", cpu, clock);
 		} else {
 			value.state = IDLE_CPU_IDLE;
 		}

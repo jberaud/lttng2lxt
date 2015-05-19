@@ -229,7 +229,7 @@ static void sched_switch_process(const char *modname, int pass, double clock,
 				   (union ltt_value)PROCESS_DEAD);
 
 		if (prev_tid == 0)
-			set_cpu_idle(clock, cpu);
+			set_cpu_running(clock, cpu);
 
 		/* emit state of newly scheduled task */
 		task = find_or_add_task(NULL, next_tid);
@@ -237,7 +237,7 @@ static void sched_switch_process(const char *modname, int pass, double clock,
 		current_task[cpu] = task;
 
 		if (next_tid == 0)
-			set_cpu_running(clock, cpu);
+			set_cpu_idle(clock, cpu);
 	}
 }
 MODULE(sched_switch);
