@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((optind != argc-1) && (argc != argc-3))
+	if ((optind != argc-1) && (optind != argc-3))
 		usage();
 
 	tracefile = argv[optind];
