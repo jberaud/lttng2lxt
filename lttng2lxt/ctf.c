@@ -151,6 +151,7 @@ static void process_one_event(struct bt_ctf_event *ctf_event, double clock,
 	if (pass == 2)
 		emit_clock(clock);
 
+	TDIAG("process events", clock, "name=%s cpu=%d pass=%d\n", name, cpu_id, pass);
 	mod->process(name, pass, clock, cpu_id, ctf_event);
 }
 
