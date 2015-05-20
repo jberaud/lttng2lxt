@@ -216,6 +216,7 @@ void scan_lttng_trace(const char *name)
 	/* XXX hack to display miss event */
 	extern int babeltrace_ctf_console_output;
 	babeltrace_ctf_console_output = 1;
+	setenv("TZ", "", 1);
 
 	ctx = bt_context_create();
 	assert(ctx);
