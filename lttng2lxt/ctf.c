@@ -213,6 +213,10 @@ void scan_lttng_trace(const char *name)
 	struct bt_iter_pos begin_pos;
 	int ret, i;
 
+	/* XXX hack to display miss event */
+	extern int babeltrace_ctf_console_output;
+	babeltrace_ctf_console_output = 1;
+
 	ctx = bt_context_create();
 	assert(ctx);
 
@@ -227,6 +231,8 @@ void scan_lttng_trace(const char *name)
 
 	INFO("pass 1: initializing modules and converting addresses\n");
 	process_events(iter, 1);
+
+	babeltrace_ctf_console_output = 0;
 
 	/* flush address symbol conversion pipe */
 	atag_flush();
