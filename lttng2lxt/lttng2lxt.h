@@ -105,6 +105,7 @@ struct task {
 	struct ltt_trace  *info_trace;
 	const char        *mode;
 	char              *name;
+	int                current_cpu;
 };
 
 enum arg_type {

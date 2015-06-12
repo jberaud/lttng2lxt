@@ -65,7 +65,8 @@ static void sys_process(const char *modname, int pass, double clock, int cpu,
 	if (pass == 2) {
 		/* dump syscall arguments */
 		for_each_arg(args, dump_syscall_arg, argbuf);
-		snprintf(buf, sizeof(buf), "%s(%s)", &modname[4], argbuf);
+		snprintf(buf, sizeof(buf), "%d: %s(%s)", cpu,
+			 &modname[4], argbuf);
 		task = get_current_task(cpu);
 		if (task) {
 			emit_trace(task->info_trace, (union ltt_value)buf);
@@ -96,7 +97,7 @@ static void exit_syscall_process(const char *modname, int pass, double clock,
 		 * value if lttng-modules is patched accordingly
 		 */
 		ret = (int)get_arg_i64(args, "ret");
-		snprintf(buf, sizeof(buf), "ret=%d", ret);
+		snprintf(buf, sizeof(buf), "%d: ret=%d", cpu, ret);
 		emit_trace(task->info_trace, (union ltt_value)buf);
 		task->mode = PROCESS_USER;
 		emit_trace(task->state_trace, (union ltt_value)task->mode);
