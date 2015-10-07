@@ -68,7 +68,7 @@ void emit_state_trace(struct task *task, union ltt_value value, int cpu)
 	char buf[16];
 
 	emit_trace(task->state_trace, value);
-	if (task->current_cpu != cpu) {
+	if (show_cpu_switch && task->current_cpu != cpu) {
 		task->current_cpu = cpu;
 		snprintf(buf, sizeof(buf), "%d", cpu);
 		emit_trace(task->info_trace, (union ltt_value)buf);

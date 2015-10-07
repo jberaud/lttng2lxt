@@ -174,6 +174,7 @@ struct ltt_module {
 extern int verbose;
 extern int diag;
 extern int gtkwave_parrot;
+extern int show_cpu_switch;
 extern int atag_enabled;
 
 void atag_init(const char *name);

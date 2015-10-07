@@ -13,6 +13,7 @@
 int verbose;
 int diag;
 int gtkwave_parrot = 1;
+int show_cpu_switch = 1;
 
 static void link_gtkw_file(const char *tracefile, const char *savefile)
 {
@@ -28,7 +29,7 @@ static void link_gtkw_file(const char *tracefile, const char *savefile)
 
 static void usage(void)
 {
-	fprintf(stderr, "\nUsage: lttng2lxt [-v] [-d] [-c] [-e <exefile>] "
+	fprintf(stderr, "\nUsage: lttng2lxt [-v] [-d] [-c] [-s] [-e <exefile>] "
 		"<lttng_trace_dir> [<lxtfile> <savefile>]\n");
 	exit(1);
 }
@@ -39,7 +40,7 @@ int main(int argc, char *argv[])
 	char *tracefile;
 	char *lxtfile, *savefile;
 
-	while ((c = getopt(argc, argv, "hvdce:")) != -1) {
+	while ((c = getopt(argc, argv, "hvdcse:")) != -1) {
 		switch (c) {
 
 		case 'e':
@@ -57,6 +58,9 @@ int main(int argc, char *argv[])
 		case 'c':
 			gtkwave_parrot = 1;
 			break;
+
+		case 's':
+			show_cpu_switch = !show_cpu_switch;
 
 		case 'h':
 		default:
