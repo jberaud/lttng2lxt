@@ -1,3 +1,8 @@
+parrot-tools-ltt (0.1.7) unstable; urgency=low
+
+  * Improvement over lttng2lxt
+
+ -- Matthieu CASTET <matthieu.castet@parrot.com>  Wed, 2 Oct 2015 11:11:29 +0200
 parrot-tools-ltt (0.1.6) unstable; urgency=low
 
   * Improvement over lttng2lxt
