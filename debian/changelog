@@ -1,8 +1,27 @@
-parrot-tools-ltt (0.1.7) unstable; urgency=low
+parrot-tools-ltt (0.1.10) unstable; urgency=low
 
   * Improvement over lttng2lxt
 
  -- Matthieu CASTET <matthieu.castet@parrot.com>  Wed, 2 Oct 2015 11:11:29 +0200
+
+parrot-tools-ltt (0.1.9) unstable; urgency=medium
+
+  * Fix binary generation issue (was built with old libraries)
+
+ -- Adrien Charruel <adrien.charruel@parrot.com>  Fri, 30 Jan 2015 13:35:30 +0100
+
+parrot-tools-ltt (0.1.8) unstable; urgency=medium
+
+  * Fix package version number
+
+ -- Adrien Charruel <adrien.charruel@parrot.com>  Fri, 30 Jan 2015 11:26:45 +0100
+
+parrot-tools-ltt (0.1.7) unstable; urgency=medium
+
+  * Fix package dependancy issues with libbabeltrace-ctf1 and libbabeltrace1
+
+ -- Adrien Charruel <adrien.charruel@parrot.com>  Fri, 30 Jan 2015 11:05:25 +0100
+
 parrot-tools-ltt (0.1.6) unstable; urgency=low
 
   * Improvement over lttng2lxt
