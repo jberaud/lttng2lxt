@@ -247,7 +247,7 @@ static void sched_switch_process(const char *modname, int pass, double clock,
 			emit_state_trace(task, (union ltt_value)PROCESS_DEAD,
 					 cpu);
 
-		if (prev_tid == 0)
+		if (prev_tid <= 0)
 			set_cpu_running(clock, cpu);
 
 		/* emit state of newly scheduled task */
@@ -255,7 +255,7 @@ static void sched_switch_process(const char *modname, int pass, double clock,
 		emit_state_trace(task, (union ltt_value)task->mode, cpu);
 		current_task[cpu] = task;
 
-		if (next_tid == 0)
+		if (next_tid <= 0)
 			set_cpu_idle(clock, cpu);
 	}
 }
