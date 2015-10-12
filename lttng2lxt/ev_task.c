@@ -225,6 +225,12 @@ static void sched_switch_process(const char *modname, int pass, double clock,
 	next_comm = get_arg_str(args, "next_comm");
 	next_tid = (int)get_arg_u64(args, "next_tid");
 
+	/* hack to have different line for per cpu idle */
+	if (prev_tid == 0)
+		prev_tid = -cpu;
+	if (next_tid == 0)
+		next_tid = -cpu;
+
 	if (pass == 1) {
 		find_or_add_task(prev_comm, prev_tid);
 		find_or_add_task(next_comm, next_tid);

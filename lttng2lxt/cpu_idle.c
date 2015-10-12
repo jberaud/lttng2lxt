@@ -101,14 +101,15 @@ void cpu_unpreempt(double clock, int cpu)
 	idle_cpu_preempt[cpu]--;
 
 	if (idle_cpu_preempt[cpu] == 0) {
+		task = get_current_task(cpu);
+		if (task)
+			emit_trace(task->state_trace,
+					(union ltt_value)task->mode);
+		else
+			INFO("cpu unpreempt : no more task for cpu %d at %lf\n", cpu, clock);
+
 		if (idle_cpu_state[cpu] == IDLE_RUNNING) {
 			value.state = IDLE_CPU_RUNNING;
-			task = get_current_task(cpu);
-			if (task)
-				emit_trace(task->state_trace,
-					   (union ltt_value)task->mode);
-			else
-				INFO("cpu unpreempt : no more task for cpu %d at %lf\n", cpu, clock);
 		} else {
 			value.state = IDLE_CPU_IDLE;
 		}
