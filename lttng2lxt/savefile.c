@@ -102,6 +102,7 @@ void write_savefile(const char *name)
 	print_group(TG_GLOBAL, "Global Info", fp, tab);
 	print_group(TG_USER, "User Info", fp, tab);
 	print_group(TG_PROCESS, "Processes", fp, tab);
+	print_group(TG_APM, "Ardupilot", fp, tab);
 
 	free(tab);
 	fclose(fp);

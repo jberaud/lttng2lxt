@@ -67,6 +67,7 @@ enum trace_group {
 	TG_GLOBAL,
 	TG_USER,
 	TG_PROCESS,
+	TG_APM
 };
 
 union ltt_value {
